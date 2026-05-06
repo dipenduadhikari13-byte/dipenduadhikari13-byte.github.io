@@ -5,165 +5,424 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Under Development</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+
         :root {
-            --primary-color: #00ffcc;
-            --bg-color: #0a0e17;
+            --green: #00ffcc;
+            --green-dim: rgba(0, 255, 204, 0.15);
+            --green-glow: rgba(0, 255, 204, 0.4);
+            --red: #ff4444;
+            --yellow: #ffd700;
+            --bg: #060b12;
+            --bg-card: rgba(0, 255, 204, 0.03);
+            --border: rgba(0, 255, 204, 0.18);
         }
 
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--primary-color);
-            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg);
+            color: var(--green);
+            font-family: 'Share Tech Mono', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             overflow: hidden;
-            box-sizing: border-box;
+            position: relative;
         }
 
-        .container {
-            width: 90%;
-            max-width: 700px;
-            padding: 20px;
-            background: rgba(0, 255, 204, 0.05);
-            border: 1px solid rgba(0, 255, 204, 0.2);
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+        /* ── Scanlines overlay ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.08) 2px,
+                rgba(0,0,0,0.08) 4px
+            );
+            pointer-events: none;
+            z-index: 100;
         }
 
-        .terminal-header {
-            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            font-size: 0.9em;
+        /* ── Grid background ── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,255,204,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,204,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Corner decorations ── */
+        .corner {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            opacity: 0.35;
+        }
+        .corner--tl { top: 20px; left: 20px; border-top: 1px solid var(--green); border-left: 1px solid var(--green); }
+        .corner--tr { top: 20px; right: 20px; border-top: 1px solid var(--green); border-right: 1px solid var(--green); }
+        .corner--bl { bottom: 20px; left: 20px; border-bottom: 1px solid var(--green); border-left: 1px solid var(--green); }
+        .corner--br { bottom: 20px; right: 20px; border-bottom: 1px solid var(--green); border-right: 1px solid var(--green); }
+
+        /* ── Main container ── */
+        .terminal {
+            width: 92%;
+            max-width: 680px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-shadow:
+                0 0 0 1px rgba(0,255,204,0.05),
+                0 0 40px rgba(0,255,204,0.08),
+                0 0 80px rgba(0,255,204,0.04);
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.6s ease both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Title bar ── */
+        .titlebar {
             display: flex;
+            align-items: center;
             justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,255,204,0.04);
         }
 
-        .terminal-body {
-            min-height: 200px;
-            font-size: 1.1em;
-            line-height: 1.6;
-            text-shadow: 0 0 5px var(--primary-color);
+        .titlebar__dots {
+            display: flex;
+            gap: 7px;
+        }
+        .titlebar__dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+        }
+        .titlebar__dot--r { background: #ff5f57; box-shadow: 0 0 6px #ff5f57; }
+        .titlebar__dot--y { background: #febc2e; box-shadow: 0 0 6px #febc2e; }
+        .titlebar__dot--g { background: #28c840; box-shadow: 0 0 6px #28c840; }
+
+        .titlebar__title {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65em;
+            letter-spacing: 0.15em;
+            opacity: 0.7;
         }
 
+        .titlebar__status {
+            font-size: 0.72em;
+            color: var(--red);
+            letter-spacing: 0.1em;
+            animation: blink-status 2s step-end infinite;
+        }
+
+        @keyframes blink-status {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        /* ── Prompt line ── */
+        .prompt-line {
+            padding: 10px 16px 0;
+            font-size: 0.75em;
+            opacity: 0.5;
+            letter-spacing: 0.05em;
+        }
+
+        /* ── Body ── */
+        .terminal__body {
+            padding: 14px 16px 6px;
+            min-height: 210px;
+            font-size: 0.97em;
+            line-height: 1.75;
+            letter-spacing: 0.03em;
+        }
+
+        .line { display: block; white-space: pre-wrap; }
+        .line--warn  { color: var(--yellow); text-shadow: 0 0 8px rgba(255,215,0,0.5); }
+        .line--error { color: var(--red);    text-shadow: 0 0 8px rgba(255,68,68,0.5); }
+        .line--ok    { color: var(--green);  text-shadow: 0 0 6px var(--green-glow); }
+
+        /* ── Cursor ── */
         .cursor {
             display: inline-block;
-            width: 10px;
-            height: 1.2em;
-            background-color: var(--primary-color);
-            vertical-align: middle;
+            width: 9px;
+            height: 1.1em;
+            background: var(--green);
+            vertical-align: text-bottom;
+            margin-left: 2px;
             animation: blink 1s step-end infinite;
+            box-shadow: 0 0 6px var(--green);
         }
 
         @keyframes blink {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+            50%       { opacity: 0; }
         }
 
-        .progress-container {
-            width: 100%;
-            height: 2px;
-            background-color: rgba(0, 255, 204, 0.2);
-            margin-top: 20px;
+        /* ── Progress bar ── */
+        .progress-wrap {
+            margin: 16px 16px 0;
             display: none;
+        }
+
+        .progress-label {
+            font-size: 0.7em;
+            opacity: 0.6;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-track {
+            height: 3px;
+            background: rgba(0,255,204,0.12);
+            border-radius: 2px;
+            overflow: hidden;
             position: relative;
         }
 
-        .progress-bar {
+        .progress-fill {
             height: 100%;
-            background-color: var(--primary-color);
             width: 0%;
-            box-shadow: 0 0 10px var(--primary-color);
+            background: var(--green);
+            box-shadow: 0 0 12px var(--green), 0 0 20px var(--green-glow);
+            border-radius: 2px;
+            transition: width 0.15s ease;
+            position: relative;
         }
 
-        .pulse {
-            animation: pulse-text 2s infinite;
+        /* Shimmer on fill */
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -2px;
+            width: 20px;
+            height: 7px;
+            background: white;
+            opacity: 0.4;
+            filter: blur(4px);
         }
 
-        @keyframes pulse-text {
-            0%, 100% { opacity: 1; text-shadow: 0 0 5px var(--primary-color); }
-            50% { opacity: 0.5; text-shadow: none; }
+        /* ── Footer ── */
+        .terminal__footer {
+            padding: 10px 16px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            margin-top: 16px;
+            font-size: 0.68em;
+            opacity: 0.4;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── Stand-by pulse ── */
+        .standby {
+            animation: pulse 2.2s ease-in-out infinite;
+            color: var(--yellow);
+            text-shadow: 0 0 8px rgba(255,215,0,0.6);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        /* ── Glitch on container ── */
+        @keyframes glitch {
+            0%   { clip-path: inset(40% 0 61% 0); transform: translate(-2px, 0); }
+            20%  { clip-path: inset(92% 0 1% 0);  transform: translate(1px, 0); }
+            40%  { clip-path: inset(43% 0 1% 0);  transform: translate(-1px, 0); }
+            60%  { clip-path: inset(25% 0 58% 0); transform: translate(2px, 0); }
+            80%  { clip-path: inset(54% 0 7% 0);  transform: translate(-2px, 0); }
+            100% { clip-path: inset(58% 0 43% 0); transform: translate(1px, 0); }
+        }
+
+        .terminal.glitching::before,
+        .terminal.glitching::after {
+            content: attr(data-text);
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+        .terminal.glitching::before {
+            animation: glitch 0.15s steps(1) both;
+            background: var(--bg-card);
+            border-radius: 6px;
+            color: #ff00aa;
+            opacity: 0.5;
+        }
+        .terminal.glitching::after {
+            animation: glitch 0.15s 0.05s steps(1) reverse both;
+            background: var(--bg-card);
+            border-radius: 6px;
+            color: var(--green);
+            opacity: 0.4;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="terminal-header">
-            <span>root@server:~#</span>
-            <span>STATUS: OFFLINE</span>
-        </div>
-        
-        <div class="terminal-body" id="terminal-body">
-            <!-- Text injected via JS -->
-        </div>
-        <span class="cursor" id="cursor"></span>
+    <div class="corner corner--tl"></div>
+    <div class="corner corner--tr"></div>
+    <div class="corner corner--bl"></div>
+    <div class="corner corner--br"></div>
 
-        <div class="progress-container" id="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
+    <div class="terminal" id="terminal">
+        <div class="titlebar">
+            <div class="titlebar__dots">
+                <div class="titlebar__dot titlebar__dot--r"></div>
+                <div class="titlebar__dot titlebar__dot--y"></div>
+                <div class="titlebar__dot titlebar__dot--g"></div>
+            </div>
+            <div class="titlebar__title">SECURE TERMINAL v2.4.1</div>
+            <div class="titlebar__status" id="status-badge">● OFFLINE</div>
+        </div>
+
+        <div class="prompt-line">root@server:~#</div>
+
+        <div class="terminal__body" id="terminal-body"></div>
+
+        <div class="progress-wrap" id="progress-wrap">
+            <div class="progress-label">
+                <span>LOADING ASSETS</span>
+                <span id="pct">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="terminal__footer">
+            <span>SESSION: #4F2A9C</span>
+            <span id="clock"></span>
+            <span>ENC: AES-256</span>
         </div>
     </div>
 
     <script>
+        /* ── Clock ── */
+        const clockEl = document.getElementById('clock');
+        function updateClock() {
+            const now = new Date();
+            clockEl.textContent = now.toTimeString().slice(0, 8);
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        /* ── Sequence ── */
         const sequence = [
-            "> INITIALIZING SECURE ENVIRONMENT...",
-            "> ESTABLISHING CONNECTION...",
-            "> MOUNTING DIRECTORIES...",
-            "> COMPILING ASSETS...",
-            "> WARNING: FRONTEND INTERFACE MISSING.",
-            "> STATUS: SITE CURRENTLY UNDER DEVELOPMENT."
+            { text: '> INITIALIZING SECURE ENVIRONMENT...',  type: 'ok'    },
+            { text: '> ESTABLISHING CONNECTION...',           type: 'ok'    },
+            { text: '> MOUNTING DIRECTORIES...',              type: 'ok'    },
+            { text: '> COMPILING ASSETS...',                  type: 'ok'    },
+            { text: '> WARNING: FRONTEND INTERFACE MISSING.', type: 'warn'  },
+            { text: '> ERROR: SITE CURRENTLY UNDER DEVELOPMENT.', type: 'error' },
         ];
 
-        const terminalBody = document.getElementById('terminal-body');
-        const cursor = document.getElementById('cursor');
-        const progressContainer = document.getElementById('progress-container');
-        const progressBar = document.getElementById('progress-bar');
-        
-        let currentLine = 0;
-        let currentChar = 0;
+        const body    = document.getElementById('terminal-body');
+        const pWrap   = document.getElementById('progress-wrap');
+        const pFill   = document.getElementById('progress-fill');
+        const pct     = document.getElementById('pct');
+        const terminal = document.getElementById('terminal');
+
+        let lineIdx = 0, charIdx = 0;
+        let cursorEl = null;
+
+        function getOrCreateCursor() {
+            if (!cursorEl) {
+                cursorEl = document.createElement('span');
+                cursorEl.className = 'cursor';
+            }
+            return cursorEl;
+        }
 
         function typeLine() {
-            if (currentLine < sequence.length) {
-                if (currentChar < sequence[currentLine].length) {
-                    terminalBody.innerHTML += sequence[currentLine].charAt(currentChar);
-                    currentChar++;
-                    // Randomize typing speed for realism
-                    setTimeout(typeLine, 30 + Math.random() * 50); 
-                } else {
-                    terminalBody.innerHTML += '<br>';
-                    currentLine++;
-                    currentChar = 0;
-                    // Pause between lines
-                    setTimeout(typeLine, 600); 
-                }
+            if (lineIdx >= sequence.length) { launchProgress(); return; }
+
+            const { text, type } = sequence[lineIdx];
+
+            // Create line element on first char
+            if (charIdx === 0) {
+                const span = document.createElement('span');
+                span.className = 'line line--' + type;
+                span.id = 'line-' + lineIdx;
+                body.appendChild(span);
+                body.appendChild(getOrCreateCursor());
+            }
+
+            const lineEl = document.getElementById('line-' + lineIdx);
+
+            if (charIdx < text.length) {
+                lineEl.textContent += text[charIdx++];
+                setTimeout(typeLine, 22 + Math.random() * 45);
             } else {
-                // Typing finished, launch progress bar
-                launchProgressBar();
+                // Move cursor to after line break
+                lineEl.after(document.createElement('br'));
+                lineIdx++;
+                charIdx = 0;
+
+                // Occasional glitch on warning/error lines
+                if (sequence[lineIdx - 1]?.type !== 'ok') triggerGlitch();
+
+                setTimeout(typeLine, lineIdx < sequence.length ? 500 : 200);
             }
         }
 
-        function launchProgressBar() {
-            progressContainer.style.display = 'block';
-            let width = 0;
-            const loadInterval = setInterval(() => {
-                if (width >= 100) {
-                    clearInterval(loadInterval);
-                    terminalBody.innerHTML += '<br><span class="pulse">> PLEASE STAND BY...</span>';
-                } else {
-                    // Randomize loading chunks
-                    width += Math.random() * 15; 
-                    if (width > 100) width = 100;
-                    progressBar.style.width = width + '%';
-                }
-            }, 150);
+        function triggerGlitch() {
+            terminal.classList.add('glitching');
+            setTimeout(() => terminal.classList.remove('glitching'), 200);
         }
 
-        // Start animation after 1 second delay
-        setTimeout(typeLine, 1000);
+        function launchProgress() {
+            // Remove cursor when done typing
+            if (cursorEl && cursorEl.parentNode) cursorEl.remove();
+
+            pWrap.style.display = 'block';
+            let width = 0;
+
+            const interval = setInterval(() => {
+                width += Math.random() * 12 + 2;
+                if (width >= 100) {
+                    width = 100;
+                    clearInterval(interval);
+                    onComplete();
+                }
+                pFill.style.width = width + '%';
+                pct.textContent = Math.round(width) + '%';
+            }, 180);
+        }
+
+        function onComplete() {
+            const br  = document.createElement('br');
+            const msg = document.createElement('span');
+            msg.className = 'line standby';
+            msg.textContent = '> PLEASE STAND BY...';
+            body.appendChild(br);
+            body.appendChild(msg);
+
+            document.getElementById('status-badge').textContent = '● STANDBY';
+            document.getElementById('status-badge').style.color = 'var(--yellow)';
+        }
+
+        setTimeout(typeLine, 800);
     </script>
 </body>
 </html>
