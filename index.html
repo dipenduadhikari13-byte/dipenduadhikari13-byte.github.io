@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Under Development</title>
+    <style>
+        :root {
+            --primary-color: #00ffcc;
+            --bg-color: #0a0e17;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 700px;
+            padding: 20px;
+            background: rgba(0, 255, 204, 0.05);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+        }
+
+        .terminal-header {
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .terminal-body {
+            min-height: 200px;
+            font-size: 1.1em;
+            line-height: 1.6;
+            text-shadow: 0 0 5px var(--primary-color);
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background-color: var(--primary-color);
+            vertical-align: middle;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 2px;
+            background-color: rgba(0, 255, 204, 0.2);
+            margin-top: 20px;
+            display: none;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .pulse {
+            animation: pulse-text 2s infinite;
+        }
+
+        @keyframes pulse-text {
+            0%, 100% { opacity: 1; text-shadow: 0 0 5px var(--primary-color); }
+            50% { opacity: 0.5; text-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="terminal-header">
+            <span>root@server:~#</span>
+            <span>STATUS: OFFLINE</span>
+        </div>
+        
+        <div class="terminal-body" id="terminal-body">
+            <!-- Text injected via JS -->
+        </div>
+        <span class="cursor" id="cursor"></span>
+
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        const sequence = [
+            "> INITIALIZING SECURE ENVIRONMENT...",
+            "> ESTABLISHING CONNECTION...",
+            "> MOUNTING DIRECTORIES...",
+            "> COMPILING ASSETS...",
+            "> WARNING: FRONTEND INTERFACE MISSING.",
+            "> STATUS: SITE CURRENTLY UNDER DEVELOPMENT."
+        ];
+
+        const terminalBody = document.getElementById('terminal-body');
+        const cursor = document.getElementById('cursor');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        
+        let currentLine = 0;
+        let currentChar = 0;
+
+        function typeLine() {
+            if (currentLine < sequence.length) {
+                if (currentChar < sequence[currentLine].length) {
+                    terminalBody.innerHTML += sequence[currentLine].charAt(currentChar);
+                    currentChar++;
+                    // Randomize typing speed for realism
+                    setTimeout(typeLine, 30 + Math.random() * 50); 
+                } else {
+                    terminalBody.innerHTML += '<br>';
+                    currentLine++;
+                    currentChar = 0;
+                    // Pause between lines
+                    setTimeout(typeLine, 600); 
+                }
+            } else {
+                // Typing finished, launch progress bar
+                launchProgressBar();
+            }
+        }
+
+        function launchProgressBar() {
+            progressContainer.style.display = 'block';
+            let width = 0;
+            const loadInterval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(loadInterval);
+                    terminalBody.innerHTML += '<br><span class="pulse">> PLEASE STAND BY...</span>';
+                } else {
+                    // Randomize loading chunks
+                    width += Math.random() * 15; 
+                    if (width > 100) width = 100;
+                    progressBar.style.width = width + '%';
+                }
+            }, 150);
+        }
+
+        // Start animation after 1 second delay
+        setTimeout(typeLine, 1000);
+    </script>
+</body>
+</html>
