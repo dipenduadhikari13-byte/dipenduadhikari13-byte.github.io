@@ -1,428 +1,1111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Under Development</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ToolForge is a modern AI-powered browser toolkit for PDFs, images, documents, music generation, and forensic analysis." />
+  <meta name="keywords" content="PDF tools,image tools,forensic tools,AI music,document tools,file utilities,streamlit tools" />
+  <meta name="author" content="Dipendu" />
+  <meta property="og:title" content="ToolForge — AI-Powered Utility Suite" />
+  <meta property="og:description" content="Browser-based tools for PDFs, images, documents, music generation, and forensic analysis." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#060810" />
 
-        :root {
-            --green: #00ffcc;
-            --green-dim: rgba(0, 255, 204, 0.15);
-            --green-glow: rgba(0, 255, 204, 0.4);
-            --red: #ff4444;
-            --yellow: #ffd700;
-            --bg: #060b12;
-            --bg-card: rgba(0, 255, 204, 0.03);
-            --border: rgba(0, 255, 204, 0.18);
-        }
+  <title>ToolForge — AI-Powered Utility Suite for PDFs, Images & Forensics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:          #060810;
+      --surface:     #0b0f1e;
+      --surface2:    #101626;
+      --surface3:    #161e30;
+      --border:      rgba(255,255,255,0.055);
+      --border-hi:   rgba(0,212,255,0.28);
+      --cyan:        #00d4ff;
+      --cyan-dim:    rgba(0,212,255,0.08);
+      --cyan-glow:   rgba(0,212,255,0.4);
+      --amber:       #f4a522;
+      --amber-dim:   rgba(244,165,34,0.10);
+      --amber-glow:  rgba(244,165,34,0.35);
+      --violet:      #a855f7;
+      --violet-dim:  rgba(168,85,247,0.10);
+      --violet-glow: rgba(168,85,247,0.35);
+      --green:       #4ade80;
+      --green-dim:   rgba(74,222,128,0.10);
+      --rose:        #f87171;
+      --rose-dim:    rgba(248,113,113,0.10);
+      --text:        #dde6f4;
+      --muted:       #5a6a86;
+      --radius:      14px;
+      --nav-h:       64px;
+      --ease:        cubic-bezier(.4,0,.2,1);
+    }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
 
-        body {
-            background-color: var(--bg);
-            color: var(--green);
-            font-family: 'Share Tech Mono', monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-            position: relative;
-        }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
 
-        /* ── Scanlines overlay ── */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 2px,
-                rgba(0,0,0,0.08) 2px,
-                rgba(0,0,0,0.08) 4px
-            );
-            pointer-events: none;
-            z-index: 100;
-        }
+    /* ── Noise overlay ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
+      opacity: 0.022;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+    }
 
-        /* ── Grid background ── */
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(0,255,204,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0,255,204,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            pointer-events: none;
-            z-index: 0;
-        }
+    /* ── Background ── */
+    .bg-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .bg-blobs  { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
 
-        /* ── Corner decorations ── */
-        .corner {
-            position: fixed;
-            width: 60px;
-            height: 60px;
-            opacity: 0.35;
-        }
-        .corner--tl { top: 20px; left: 20px; border-top: 1px solid var(--green); border-left: 1px solid var(--green); }
-        .corner--tr { top: 20px; right: 20px; border-top: 1px solid var(--green); border-right: 1px solid var(--green); }
-        .corner--bl { bottom: 20px; left: 20px; border-bottom: 1px solid var(--green); border-left: 1px solid var(--green); }
-        .corner--br { bottom: 20px; right: 20px; border-bottom: 1px solid var(--green); border-right: 1px solid var(--green); }
+    .blob { position: absolute; border-radius: 50%; filter: blur(90px); }
+    .blob-1 {
+      width: 700px; height: 700px; top: -220px; left: -180px;
+      background: radial-gradient(circle, rgba(0,212,255,0.11) 0%, transparent 70%);
+      animation: blobA 22s ease-in-out infinite alternate;
+    }
+    .blob-2 {
+      width: 550px; height: 550px; bottom: -120px; right: -120px;
+      background: radial-gradient(circle, rgba(244,165,34,0.09) 0%, transparent 70%);
+      animation: blobB 28s ease-in-out infinite alternate;
+    }
+    .blob-3 {
+      width: 420px; height: 420px; top: 38%; left: 55%;
+      background: radial-gradient(circle, rgba(168,85,247,0.07) 0%, transparent 70%);
+      animation: blobC 19s ease-in-out infinite alternate;
+    }
+    @keyframes blobA { from{transform:translate(0,0) scale(1)} to{transform:translate(70px,50px) scale(1.12)} }
+    @keyframes blobB { from{transform:translate(0,0) scale(1)} to{transform:translate(-55px,-40px) scale(1.08)} }
+    @keyframes blobC { from{transform:translate(0,0) scale(1)} to{transform:translate(35px,-55px) scale(0.93)} }
 
-        /* ── Main container ── */
-        .terminal {
-            width: 92%;
-            max-width: 680px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            box-shadow:
-                0 0 0 1px rgba(0,255,204,0.05),
-                0 0 40px rgba(0,255,204,0.08),
-                0 0 80px rgba(0,255,204,0.04);
-            position: relative;
-            z-index: 1;
-            animation: fadeIn 0.6s ease both;
-        }
+    .bg-grid {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+    }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--nav-h); z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5%;
+      background: rgba(6,8,16,0.7);
+      backdrop-filter: blur(22px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+      transition: background .35s;
+    }
+    nav.scrolled { background: rgba(6,8,16,0.92); }
 
-        /* ── Title bar ── */
-        .titlebar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 16px;
-            border-bottom: 1px solid var(--border);
-            background: rgba(0,255,204,0.04);
-        }
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.3rem; color: var(--cyan);
+      text-shadow: 0 0 28px var(--cyan-glow);
+      cursor: pointer; display: flex; align-items: center; gap: 10px;
+      transition: opacity .2s;
+    }
+    .nav-logo:hover { opacity: .82; }
+    .nav-logo-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--cyan) 0%, #009fcc 100%);
+      border-radius: 8px; font-size: 14px; color: var(--bg);
+      box-shadow: 0 0 18px var(--cyan-glow);
+    }
 
-        .titlebar__dots {
-            display: flex;
-            gap: 7px;
-        }
-        .titlebar__dot {
-            width: 11px;
-            height: 11px;
-            border-radius: 50%;
-        }
-        .titlebar__dot--r { background: #ff5f57; box-shadow: 0 0 6px #ff5f57; }
-        .titlebar__dot--y { background: #febc2e; box-shadow: 0 0 6px #febc2e; }
-        .titlebar__dot--g { background: #28c840; box-shadow: 0 0 6px #28c840; }
+    .nav-links { display: flex; gap: 2px; list-style: none; }
+    .nav-links a {
+      font-size: .875rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; padding: 6px 14px; border-radius: 7px;
+      transition: color .2s, background .2s;
+      cursor: pointer; letter-spacing: .02em; position: relative;
+    }
+    .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-links a.active {
+      color: var(--cyan); background: var(--cyan-dim);
+    }
+    .nav-links a.active::after {
+      content: ''; position: absolute; bottom: 5px; left: 50%;
+      transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--cyan); box-shadow: 0 0 6px var(--cyan);
+    }
 
-        .titlebar__title {
-            font-family: 'Orbitron', monospace;
-            font-size: 0.65em;
-            letter-spacing: 0.15em;
-            opacity: 0.7;
-        }
+    .nav-cta {
+      font-size: .85rem; font-weight: 600;
+      color: var(--bg); background: var(--cyan);
+      border: none; padding: 8px 20px; border-radius: 8px;
+      cursor: pointer; transition: box-shadow .25s, transform .15s;
+      font-family: 'Outfit', sans-serif; letter-spacing: .03em;
+      position: relative; overflow: hidden;
+    }
+    .nav-cta::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.22), transparent);
+    }
+    .nav-cta:hover { box-shadow: 0 0 26px var(--cyan-glow); transform: translateY(-1px); }
 
-        .titlebar__status {
-            font-size: 0.72em;
-            color: var(--red);
-            letter-spacing: 0.1em;
-            animation: blink-status 2s step-end infinite;
-        }
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      cursor: pointer; padding: 6px; border-radius: 6px;
+      transition: background .2s;
+    }
+    .hamburger:hover { background: rgba(255,255,255,0.05); }
+    .hamburger span {
+      width: 22px; height: 2px; background: var(--text); border-radius: 2px;
+      transition: transform .3s var(--ease), opacity .25s, width .3s;
+      display: block;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; width: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
-        @keyframes blink-status {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.3; }
-        }
+    /* ── Pages ── */
+    .page { display: none; position: relative; z-index: 1; padding-top: var(--nav-h); }
+    .page.active { display: block; animation: pageFadeIn .4s var(--ease) both; }
+    @keyframes pageFadeIn {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
 
-        /* ── Prompt line ── */
-        .prompt-line {
-            padding: 10px 16px 0;
-            font-size: 0.75em;
-            opacity: 0.5;
-            letter-spacing: 0.05em;
-        }
+    /* ── Hero ── */
+    .hero {
+      min-height: calc(100vh - var(--nav-h));
+      display: grid; grid-template-columns: 1fr 1fr;
+      align-items: center; gap: 52px;
+      padding: 60px 5%;
+      max-width: 1200px; margin: 0 auto;
+      position: relative;
+    }
+    .hero-content { text-align: left; }
 
-        /* ── Body ── */
-        .terminal__body {
-            padding: 14px 16px 6px;
-            min-height: 210px;
-            font-size: 0.97em;
-            line-height: 1.75;
-            letter-spacing: 0.03em;
-        }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--amber-dim);
+      border: 1px solid rgba(244,165,34,.22);
+      color: var(--amber);
+      font-family: 'JetBrains Mono', monospace; font-size: .68rem;
+      padding: 5px 14px; border-radius: 20px; margin-bottom: 24px;
+      letter-spacing: .1em; animation: fadeUp .5s both;
+    }
+    .badge-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--amber); box-shadow: 0 0 6px var(--amber);
+      animation: blink 2s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
-        .line { display: block; white-space: pre-wrap; }
-        .line--warn  { color: var(--yellow); text-shadow: 0 0 8px rgba(255,215,0,0.5); }
-        .line--error { color: var(--red);    text-shadow: 0 0 8px rgba(255,68,68,0.5); }
-        .line--ok    { color: var(--green);  text-shadow: 0 0 6px var(--green-glow); }
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.5rem, 4.5vw, 4.4rem);
+      line-height: 1.05; letter-spacing: -.026em;
+      animation: fadeUp .5s .1s both;
+    }
+    h1 em { font-style: italic; color: var(--cyan); text-shadow: 0 0 44px var(--cyan-glow); }
 
-        /* ── Cursor ── */
-        .cursor {
-            display: inline-block;
-            width: 9px;
-            height: 1.1em;
-            background: var(--green);
-            vertical-align: text-bottom;
-            margin-left: 2px;
-            animation: blink 1s step-end infinite;
-            box-shadow: 0 0 6px var(--green);
-        }
+    .hero-sub {
+      font-size: 1rem; color: var(--muted); max-width: 455px;
+      margin: 20px 0 34px; font-weight: 300; line-height: 1.72;
+      animation: fadeUp .5s .2s both;
+    }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0; }
-        }
+    .hero-actions {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      animation: fadeUp .5s .3s both;
+    }
+    .btn-primary {
+      background: var(--cyan); color: var(--bg); border: none;
+      padding: 12px 28px; border-radius: 9px;
+      font-family: 'Outfit', sans-serif; font-size: .95rem; font-weight: 600;
+      cursor: pointer; transition: box-shadow .25s, transform .15s;
+      letter-spacing: .02em; position: relative; overflow: hidden;
+    }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.24), transparent);
+    }
+    .btn-primary:hover { box-shadow: 0 0 30px var(--cyan-glow); transform: translateY(-2px); }
+    .btn-ghost {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); padding: 12px 28px;
+      border-radius: 9px; font-family: 'Outfit', sans-serif;
+      font-size: .95rem; font-weight: 500; cursor: pointer;
+      transition: border-color .25s, background .25s, color .25s;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.16); background: rgba(255,255,255,0.04); color: var(--cyan); }
 
-        /* ── Progress bar ── */
-        .progress-wrap {
-            margin: 16px 16px 0;
-            display: none;
-        }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(20px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
 
-        .progress-label {
-            font-size: 0.7em;
-            opacity: 0.6;
-            margin-bottom: 6px;
-            display: flex;
-            justify-content: space-between;
-        }
+    .stats-row {
+      display: flex; gap: 28px; margin-top: 48px;
+      animation: fadeUp .5s .4s both;
+    }
+    .stat-num {
+      font-family: 'DM Serif Display', serif; font-size: 1.75rem; color: var(--cyan); line-height: 1;
+    }
+    .stat-label { font-size: .7rem; color: var(--muted); letter-spacing: .07em; text-transform: uppercase; margin-top: 4px; }
+    .stat-divider { width: 1px; background: var(--border); align-self: stretch; }
 
-        .progress-track {
-            height: 3px;
-            background: rgba(0,255,204,0.12);
-            border-radius: 2px;
-            overflow: hidden;
-            position: relative;
-        }
+    /* ── Hero visual (right col) ── */
+    .hero-visual {
+      display: flex; flex-direction: column; gap: 14px;
+      animation: fadeUp .5s .35s both;
+    }
 
-        .progress-fill {
-            height: 100%;
-            width: 0%;
-            background: var(--green);
-            box-shadow: 0 0 12px var(--green), 0 0 20px var(--green-glow);
-            border-radius: 2px;
-            transition: width 0.15s ease;
-            position: relative;
-        }
+    /* Notice bar */
+    .notice-bar {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: linear-gradient(135deg, rgba(244,165,34,0.06), rgba(244,165,34,0.02));
+      border: 1px solid rgba(244,165,34,.2);
+      border-radius: 12px; padding: 13px 16px;
+      font-size: .875rem; color: rgba(244,220,130,.88); line-height: 1.65;
+      position: relative; overflow: hidden;
+    }
+    .notice-bar::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(244,165,34,0.45), transparent);
+    }
+    .notice-icon { font-size: .95rem; margin-top: 2px; flex-shrink: 0; }
+    .notice-bar strong { color: var(--amber); font-weight: 600; }
 
-        /* Shimmer on fill */
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: -2px;
-            width: 20px;
-            height: 7px;
-            background: white;
-            opacity: 0.4;
-            filter: blur(4px);
-        }
+    /* Terminal panel */
+    .hero-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+      position: relative;
+    }
+    .hero-panel::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+    }
+    .panel-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 18px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-dots { display: flex; gap: 6px; }
+    .panel-dots span { width: 11px; height: 11px; border-radius: 50%; }
+    .panel-dots span:nth-child(1) { background: #ff5f57; }
+    .panel-dots span:nth-child(2) { background: #febc2e; }
+    .panel-dots span:nth-child(3) { background: #28c840; }
+    .panel-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .7rem; color: var(--muted); letter-spacing: .06em; flex: 1;
+    }
+    .panel-live {
+      display: flex; align-items: center; gap: 5px;
+      font-family: 'JetBrains Mono', monospace; font-size: .6rem;
+      color: var(--green); letter-spacing: .1em;
+      background: rgba(74,222,128,0.1);
+      border: 1px solid rgba(74,222,128,0.2);
+      padding: 2px 9px; border-radius: 10px;
+    }
+    .live-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 5px var(--green);
+      animation: blink 1.4s step-end infinite;
+    }
+    .panel-body { padding: 14px; display: flex; flex-direction: column; gap: 9px; }
+    .p-item {
+      display: flex; align-items: center; gap: 11px;
+      padding: 11px 13px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; transition: border-color .3s;
+    }
+    .p-item.active-item { border-color: rgba(0,212,255,0.22); }
+    .p-icon { font-size: 1.05rem; width: 26px; text-align: center; flex-shrink: 0; }
+    .p-info { flex: 1; min-width: 0; }
+    .p-name {
+      font-family: 'JetBrains Mono', monospace; font-size: .7rem;
+      color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .p-sub { font-size: .68rem; color: var(--muted); margin-top: 2px; }
+    .p-bar { height: 2px; background: var(--surface3); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .p-bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), #00a8cc); border-radius: 2px; transition: width 3.5s linear; }
+    .p-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+      flex-shrink: 0; white-space: nowrap;
+    }
+    .p-badge.done    { color: var(--green); }
+    .p-badge.working { color: var(--cyan); }
+    .p-badge.queued  { color: var(--muted); }
 
-        /* ── Footer ── */
-        .terminal__footer {
-            padding: 10px 16px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border);
-            margin-top: 16px;
-            font-size: 0.68em;
-            opacity: 0.4;
-            letter-spacing: 0.08em;
-        }
+    /* ── Features strip ── */
+    .features-strip {
+      background: linear-gradient(180deg, var(--surface) 0%, rgba(11,15,30,0) 100%);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 64px 5%;
+    }
+    .features-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 36px;
+    }
+    .feature { display: flex; flex-direction: column; gap: 10px; }
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--cyan-dim); border: 1px solid var(--border-hi);
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .feature:hover .feature-icon { transform: scale(1.1); box-shadow: 0 0 22px var(--cyan-glow); }
+    .feature-title { font-weight: 600; font-size: .95rem; }
+    .feature-text  { font-size: .85rem; color: var(--muted); font-weight: 300; line-height: 1.62; }
 
-        /* ── Stand-by pulse ── */
-        .standby {
-            animation: pulse 2.2s ease-in-out infinite;
-            color: var(--yellow);
-            text-shadow: 0 0 8px rgba(255,215,0,0.6);
-        }
+    /* ── Section ── */
+    .section { padding: 80px 5%; max-width: 1200px; margin: 0 auto; }
+    .section-label {
+      font-family: 'JetBrains Mono', monospace; font-size: .68rem;
+      color: var(--cyan); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.8rem,4vw,2.8rem); line-height: 1.12;
+      letter-spacing: -.02em; margin-bottom: 12px;
+    }
+    .section-desc { color: var(--muted); font-size: 1rem; max-width: 480px; font-weight: 300; margin-bottom: 48px; line-height: 1.7; }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.3; }
-        }
+    /* ── Tool cards ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
+      gap: 16px;
+    }
+    .tool-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 28px 24px;
+      text-decoration: none; color: var(--text); display: block;
+      position: relative; overflow: hidden;
+      transition: border-color .25s, transform .22s var(--ease), box-shadow .25s;
+    }
+    /* gradient wash */
+    .tool-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, var(--card-wash, var(--cyan-dim)) 0%, transparent 55%);
+      opacity: 0; transition: opacity .3s;
+    }
+    /* top accent line */
+    .tool-card::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--card-accent, var(--cyan));
+      transform: scaleX(0); transform-origin: left;
+      transition: transform .38s var(--ease);
+    }
+    .tool-card:hover {
+      border-color: rgba(255,255,255,0.12);
+      transform: translateY(-6px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .tool-card:hover::before { opacity: 1; }
+    .tool-card:hover::after  { transform: scaleX(1); }
 
-        /* ── Glitch on container ── */
-        @keyframes glitch {
-            0%   { clip-path: inset(40% 0 61% 0); transform: translate(-2px, 0); }
-            20%  { clip-path: inset(92% 0 1% 0);  transform: translate(1px, 0); }
-            40%  { clip-path: inset(43% 0 1% 0);  transform: translate(-1px, 0); }
-            60%  { clip-path: inset(25% 0 58% 0); transform: translate(2px, 0); }
-            80%  { clip-path: inset(54% 0 7% 0);  transform: translate(-2px, 0); }
-            100% { clip-path: inset(58% 0 43% 0); transform: translate(1px, 0); }
-        }
+    .tool-card[data-cat="pdf"]      { --card-accent: var(--cyan);   --card-wash: var(--cyan-dim); }
+    .tool-card[data-cat="image"]    { --card-accent: var(--amber);  --card-wash: var(--amber-dim); }
+    .tool-card[data-cat="doc"]      { --card-accent: var(--green);  --card-wash: var(--green-dim); }
+    .tool-card[data-cat="ai"]       { --card-accent: var(--violet); --card-wash: var(--violet-dim); }
+    .tool-card[data-cat="forensic"] { --card-accent: var(--rose);   --card-wash: var(--rose-dim); }
 
-        .terminal.glitching::before,
-        .terminal.glitching::after {
-            content: attr(data-text);
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-        }
-        .terminal.glitching::before {
-            animation: glitch 0.15s steps(1) both;
-            background: var(--bg-card);
-            border-radius: 6px;
-            color: #ff00aa;
-            opacity: 0.5;
-        }
-        .terminal.glitching::after {
-            animation: glitch 0.15s 0.05s steps(1) reverse both;
-            background: var(--bg-card);
-            border-radius: 6px;
-            color: var(--green);
-            opacity: 0.4;
-        }
-    </style>
+    .tool-icon { font-size: 2rem; margin-bottom: 16px; display: block; line-height: 1; }
+    .tool-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 8px; margin-bottom: 8px;
+    }
+    .tool-title { font-family: 'DM Serif Display', serif; font-size: 1.18rem; }
+    .tool-arrow {
+      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+      background: var(--surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; color: var(--muted);
+      transition: background .22s, color .22s, border-color .22s, transform .22s;
+    }
+    .tool-card:hover .tool-arrow {
+      background: var(--card-accent, var(--cyan));
+      color: var(--bg); border-color: transparent;
+      transform: translate(2px,-2px);
+    }
+    .tool-desc { font-size: .87rem; color: var(--muted); font-weight: 300; line-height: 1.57; }
+    .tool-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      margin-top: 18px;
+      font-family: 'JetBrains Mono', monospace; font-size: .6rem;
+      color: var(--card-accent, var(--cyan));
+      background: var(--card-wash, var(--cyan-dim));
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 3px 10px; border-radius: 20px; letter-spacing: .09em;
+    }
+
+    /* ── Scroll reveal ── */
+    .reveal {
+      opacity: 0; transform: translateY(26px);
+      transition: opacity .65s var(--ease), transform .65s var(--ease);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal-d1 { transition-delay: .1s; }
+    .reveal-d2 { transition-delay: .2s; }
+    .reveal-d3 { transition-delay: .3s; }
+    .reveal-d4 { transition-delay: .4s; }
+
+    /* ── Back to top ── */
+    .back-top {
+      position: fixed; bottom: 28px; right: 28px; z-index: 100;
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); font-size: .9rem;
+      transition: opacity .3s, transform .3s, border-color .2s, color .2s, box-shadow .2s;
+      opacity: 0; transform: translateY(12px); pointer-events: none;
+    }
+    .back-top.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .back-top:hover { border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 16px var(--cyan-glow); }
+
+    /* ── Footer ── */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 52px 5% 28px;
+      position: relative; z-index: 1;
+    }
+    footer::before {
+      content: ''; position: absolute; top: 0; left: 5%; right: 5%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,212,255,0.22), transparent);
+    }
+    .footer-inner  { max-width: 1200px; margin: 0 auto; }
+    .footer-top {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; flex-wrap: wrap; gap: 36px; margin-bottom: 44px;
+    }
+    .footer-brand p { color: var(--muted); font-size: .85rem; max-width: 250px; margin-top: 10px; font-weight: 300; line-height: 1.65; }
+    .footer-cols   { display: flex; gap: 52px; flex-wrap: wrap; }
+    .footer-col h4 {
+      font-size: .68rem; font-family: 'JetBrains Mono', monospace;
+      color: var(--muted); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 16px;
+    }
+    .footer-col ul { list-style: none; }
+    .footer-col ul li { margin-bottom: 10px; }
+    .footer-col ul li a { color: var(--text); text-decoration: none; font-size: .875rem; transition: color .2s; cursor: pointer; }
+    .footer-col ul li a:hover { color: var(--cyan); }
+    .footer-bottom {
+      border-top: 1px solid var(--border); padding-top: 22px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .footer-bottom p    { color: var(--muted); font-size: .8rem; }
+    .footer-bottom span { font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); }
+    .footer-bottom a    { color: var(--muted); text-decoration: none; cursor: pointer; transition: color .2s; }
+    .footer-bottom a:hover { color: var(--cyan); }
+
+    /* ── Inner pages ── */
+    .inner-hero {
+      padding: 80px 5% 48px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, var(--surface) 0%, transparent 100%);
+      text-align: center; position: relative;
+    }
+    .inner-hero::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+    }
+    .inner-hero h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem,5vw,3.4rem); letter-spacing: -.022em; margin-bottom: 12px;
+    }
+    .inner-hero p { color: var(--muted); font-weight: 300; max-width: 500px; margin: 0 auto; line-height: 1.7; }
+
+    .prose-wrap { max-width: 780px; margin: 0 auto; padding: 64px 5%; }
+    .prose-wrap h3 {
+      font-family: 'DM Serif Display', serif; font-size: 1.4rem;
+      margin-bottom: 10px; margin-top: 44px; color: var(--text);
+    }
+    .prose-wrap h3:first-of-type { margin-top: 0; }
+    .prose-wrap p  { color: var(--muted); font-size: .95rem; line-height: 1.82; font-weight: 300; margin-bottom: 16px; }
+    .prose-wrap ul { color: var(--muted); font-size: .95rem; font-weight: 300; line-height: 1.82; margin: 0 0 16px 20px; }
+    .prose-wrap ul li { margin-bottom: 6px; }
+    .prose-wrap strong { color: var(--text); font-weight: 600; }
+    .prose-wrap a { color: var(--cyan); text-decoration: none; transition: opacity .2s; }
+    .prose-wrap a:hover { opacity: .78; }
+
+    .effective-date {
+      font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      display: inline-block; padding: 4px 14px; border-radius: 20px;
+      margin-bottom: 40px; letter-spacing: .07em;
+    }
+
+    .about-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 14px; margin: 36px 0; }
+    .about-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      transition: border-color .25s, transform .22s;
+    }
+    .about-card:hover { border-color: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .about-card .icon { font-size: 1.5rem; margin-bottom: 10px; }
+    .about-card h4    { font-weight: 600; margin-bottom: 6px; font-size: .95rem; }
+    .about-card p     { color: var(--muted); font-size: .85rem; font-weight: 300; margin: 0; line-height: 1.6; }
+
+    /* ── Responsive ── */
+    @media (max-width: 920px) {
+      .hero {
+        grid-template-columns: 1fr; text-align: center;
+        padding: 48px 5% 56px; gap: 40px;
+      }
+      .hero-sub { margin-left: auto; margin-right: auto; }
+      .hero-actions { justify-content: center; }
+      .stats-row { justify-content: center; }
+      .hero-visual { max-width: 480px; margin: 0 auto; }
+    }
+    @media (max-width: 640px) {
+      .nav-links, .nav-cta { display: none; }
+      .hamburger { display: flex; }
+      nav { padding: 0 4%; }
+      .nav-links.open {
+        display: flex; flex-direction: column;
+        position: fixed; top: var(--nav-h); left: 0; right: 0;
+        background: rgba(6,8,16,.97); backdrop-filter: blur(22px);
+        border-bottom: 1px solid var(--border);
+        padding: 14px; gap: 2px; z-index: 199;
+      }
+      .nav-links.open a { width: 100%; border-radius: 8px; padding: 10px 16px; }
+      .stats-row { gap: 18px; flex-wrap: wrap; }
+      .footer-top { flex-direction: column; }
+      .tools-grid { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .footer-cols { gap: 32px; }
+      .back-top { bottom: 18px; right: 18px; }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="corner corner--tl"></div>
-    <div class="corner corner--tr"></div>
-    <div class="corner corner--bl"></div>
-    <div class="corner corner--br"></div>
+<canvas class="bg-canvas" id="stars"></canvas>
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+<div class="bg-grid"></div>
 
-    <div class="terminal" id="terminal">
-        <div class="titlebar">
-            <div class="titlebar__dots">
-                <div class="titlebar__dot titlebar__dot--r"></div>
-                <div class="titlebar__dot titlebar__dot--y"></div>
-                <div class="titlebar__dot titlebar__dot--g"></div>
-            </div>
-            <div class="titlebar__title">SECURE TERMINAL v2.4.1</div>
-            <div class="titlebar__status" id="status-badge">● OFFLINE</div>
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- ── NAV ── -->
+<nav id="mainNav">
+  <div class="nav-logo" onclick="showPage('home')">
+    <div class="nav-logo-icon">⚙</div> ToolForge
+  </div>
+  <ul class="nav-links" id="nav-links">
+    <li><a onclick="showPage('home')"    id="nav-home"    class="active">Home</a></li>
+    <li><a onclick="showPage('tools')"   id="nav-tools">Tools</a></li>
+    <li><a onclick="showPage('about')"   id="nav-about">About</a></li>
+    <li><a onclick="showPage('privacy')" id="nav-privacy">Privacy</a></li>
+    <li><a onclick="showPage('terms')"   id="nav-terms">Terms</a></li>
+  </ul>
+  <button class="nav-cta" onclick="showPage('tools')">Explore Tools →</button>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ═══ PAGE: HOME ═══ -->
+<div class="page active" id="page-home">
+  <section class="hero">
+
+    <!-- Left: content -->
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        STREAMLIT-POWERED UTILITIES
+      </div>
+      <h1>Every File Task,<br><em>Instantly Solved.</em></h1>
+      <p class="hero-sub">A high-performance browser toolkit for PDFs, images, documents, audio, and forensic analysis — engineered for speed, privacy, and AI-enhanced workflows.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="showPage('tools')">Browse All Tools</button>
+        <button class="btn-ghost"   onclick="showPage('about')">Learn More</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-num">5+</div>
+          <div class="stat-label">Production Tools</div>
         </div>
-
-        <div class="prompt-line">root@server:~#</div>
-
-        <div class="terminal__body" id="terminal-body"></div>
-
-        <div class="progress-wrap" id="progress-wrap">
-            <div class="progress-label">
-                <span>LOADING ASSETS</span>
-                <span id="pct">0%</span>
-            </div>
-            <div class="progress-track">
-                <div class="progress-fill" id="progress-fill"></div>
-            </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <div class="stat-num">100%</div>
+          <div class="stat-label">Free to Use</div>
         </div>
-
-        <div class="terminal__footer">
-            <span>SESSION: #4F2A9C</span>
-            <span id="clock"></span>
-            <span>ENC: AES-256</span>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <div class="stat-num">AI</div>
+          <div class="stat-label">Powered</div>
         </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <div class="stat-num">0</div>
+          <div class="stat-label">Setup Required</div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        /* ── Clock ── */
-        const clockEl = document.getElementById('clock');
-        function updateClock() {
-            const now = new Date();
-            clockEl.textContent = now.toTimeString().slice(0, 8);
+    <!-- Right: visual -->
+    <div class="hero-visual">
+      <div class="notice-bar">
+        <span class="notice-icon">⚡</span>
+        <div>
+          <strong>Heads up:</strong> Some tools on Streamlit Community Cloud may take a moment to wake from idle. Please allow a few seconds for the app to initialize.
+        </div>
+      </div>
+
+      <div class="hero-panel">
+        <div class="panel-header">
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+          <div class="panel-title">toolforge · active session</div>
+          <div class="panel-live"><span class="live-dot"></span>LIVE</div>
+        </div>
+        <div class="panel-body">
+          <div class="p-item">
+            <div class="p-icon">📄</div>
+            <div class="p-info">
+              <div class="p-name">report_q4_2026.pdf</div>
+              <div class="p-sub">PDF Compressor · saved 68%</div>
+            </div>
+            <div class="p-badge done">✓ done</div>
+          </div>
+          <div class="p-item active-item">
+            <div class="p-icon">🖼️</div>
+            <div class="p-info">
+              <div class="p-name">hero_photo.png</div>
+              <div class="p-sub">Image Tools · resizing...</div>
+              <div class="p-bar"><div class="p-bar-fill" id="pbar"></div></div>
+            </div>
+            <div class="p-badge working" id="pct">0%</div>
+          </div>
+          <div class="p-item">
+            <div class="p-icon">🎵</div>
+            <div class="p-info">
+              <div class="p-name">ambient_track.wav</div>
+              <div class="p-sub">AI Music Maker · queued</div>
+            </div>
+            <div class="p-badge queued">— queue</div>
+          </div>
+          <div class="p-item">
+            <div class="p-icon">🕵️</div>
+            <div class="p-info">
+              <div class="p-name">suspicious_file.exe</div>
+              <div class="p-sub">Forensic Detector · pending</div>
+            </div>
+            <div class="p-badge queued">— queue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <div class="features-strip reveal">
+    <div class="features-inner">
+      <div class="feature reveal reveal-d1">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Instant Access</div>
+        <div class="feature-text">No sign-up, no installs. Open any tool and start working immediately in your browser.</div>
+      </div>
+      <div class="feature reveal reveal-d2">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">Privacy First</div>
+        <div class="feature-text">Files are processed in-session and never permanently stored on our servers.</div>
+      </div>
+      <div class="feature reveal reveal-d3">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI-Enhanced</div>
+        <div class="feature-text">Several tools use AI models to intelligently optimize, generate, and detect.</div>
+      </div>
+      <div class="feature reveal reveal-d4">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-title">Always Updated</div>
+        <div class="feature-text">Cloud-hosted on Streamlit — tools update automatically with no action needed.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tools -->
+  <section class="section reveal">
+    <div class="section-label">// TOOLS</div>
+    <h2 class="section-title">Pick Your Tool</h2>
+    <p class="section-desc">Five specialized utilities, each purpose-built for its task. Click any card to open the live Streamlit app.</p>
+    <div class="tools-grid">
+      <a class="tool-card reveal reveal-d1" data-cat="pdf" href="https://pdf-tools-xyz.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">📄</span>
+        <div class="tool-header"><div class="tool-title">PDF Tools</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Compress, split, merge and optimize PDF documents with one click.</div>
+        <span class="tool-tag">STREAMLIT APP</span>
+      </a>
+      <a class="tool-card reveal reveal-d2" data-cat="image" href="https://image-tools-x.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">🖼️</span>
+        <div class="tool-header"><div class="tool-title">Image Tools</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Resize, merge, convert and batch-process images across popular formats.</div>
+        <span class="tool-tag">STREAMLIT APP</span>
+      </a>
+      <a class="tool-card reveal reveal-d3" data-cat="doc" href="https://doc-tools-x.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">📝</span>
+        <div class="tool-header"><div class="tool-title">Doc Tools</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Compress and optimize Word documents efficiently without losing formatting.</div>
+        <span class="tool-tag">STREAMLIT APP</span>
+      </a>
+      <a class="tool-card reveal reveal-d1" data-cat="ai" href="https://ai-music-maker-gqhify9it4ntcvuzkthyox.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">🎵</span>
+        <div class="tool-header"><div class="tool-title">AI Music Maker</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Generate original AI-powered music content, beats, and audio compositions.</div>
+        <span class="tool-tag">AI · STREAMLIT APP</span>
+      </a>
+      <a class="tool-card reveal reveal-d2" data-cat="forensic" href="https://forensic-detector.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">🕵️</span>
+        <div class="tool-header"><div class="tool-title">Forensic Detector</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Analyze files, detect anomalies, and surface hidden metadata for investigation.</div>
+        <span class="tool-tag">AI · STREAMLIT APP</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="nav-logo" style="cursor:default;">
+            <div class="nav-logo-icon">⚙</div> ToolForge
+          </div>
+          <p>A modern AI-powered utility platform focused on privacy, speed, and browser-native productivity.</p>
+        </div>
+        <div class="footer-cols">
+          <div class="footer-col">
+            <h4>Tools</h4>
+            <ul>
+              <li><a href="https://pdf-tools-xyz.streamlit.app/" target="_blank" rel="noopener noreferrer">PDF Tools</a></li>
+              <li><a href="https://image-tools-x.streamlit.app/" target="_blank" rel="noopener noreferrer">Image Tools</a></li>
+              <li><a href="https://doc-tools-x.streamlit.app/" target="_blank" rel="noopener noreferrer">Doc Tools</a></li>
+              <li><a href="https://ai-music-maker-gqhify9it4ntcvuzkthyox.streamlit.app/" target="_blank" rel="noopener noreferrer">AI Music Maker</a></li>
+              <li><a href="https://forensic-detector.streamlit.app/" target="_blank" rel="noopener noreferrer">Forensic Detector</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <ul>
+              <li><a onclick="showPage('about')">About</a></li>
+              <li><a onclick="showPage('privacy')">Privacy Policy</a></li>
+              <li><a onclick="showPage('terms')">Terms of Service</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 ToolForge. All rights reserved.</p>
+        <span>v1.0.0 · Powered by Streamlit</span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══ PAGE: TOOLS ═══ -->
+<div class="page" id="page-tools">
+  <div class="inner-hero">
+    <div class="section-label" style="margin-bottom:12px;">// ALL TOOLS</div>
+    <h2>The Full Toolkit</h2>
+    <p>Every tool runs live in the cloud. No installs, no waiting — just click and go.</p>
+  </div>
+  <section class="section">
+    <div class="tools-grid">
+      <a class="tool-card" data-cat="pdf" href="https://pdf-tools-xyz.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">📄</span>
+        <div class="tool-header"><div class="tool-title">PDF Tools</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Compress, split, merge and optimize PDF documents with one click. Works with all PDF versions.</div>
+        <span class="tool-tag">STREAMLIT APP</span>
+      </a>
+      <a class="tool-card" data-cat="image" href="https://image-tools-x.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">🖼️</span>
+        <div class="tool-header"><div class="tool-title">Image Tools</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Resize, merge, convert and batch-process images across popular formats including JPG, PNG, WebP.</div>
+        <span class="tool-tag">STREAMLIT APP</span>
+      </a>
+      <a class="tool-card" data-cat="doc" href="https://doc-tools-x.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">📝</span>
+        <div class="tool-header"><div class="tool-title">Doc Tools</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Compress and optimize Word documents without losing formatting or embedded content.</div>
+        <span class="tool-tag">STREAMLIT APP</span>
+      </a>
+      <a class="tool-card" data-cat="ai" href="https://ai-music-maker-gqhify9it4ntcvuzkthyox.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">🎵</span>
+        <div class="tool-header"><div class="tool-title">AI Music Maker</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Generate original AI-powered music content, beats, and audio compositions from prompts.</div>
+        <span class="tool-tag">AI · STREAMLIT APP</span>
+      </a>
+      <a class="tool-card" data-cat="forensic" href="https://forensic-detector.streamlit.app/" target="_blank" rel="noopener noreferrer">
+        <span class="tool-icon">🕵️</span>
+        <div class="tool-header"><div class="tool-title">Forensic Detector</div><div class="tool-arrow">↗</div></div>
+        <div class="tool-desc">Analyze uploaded files, detect anomalies, surface hidden metadata, and flag suspicious patterns.</div>
+        <span class="tool-tag">AI · STREAMLIT APP</span>
+      </a>
+    </div>
+  </section>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-bottom" style="border-top:none;padding-top:0;">
+        <p>© 2026 ToolForge. All rights reserved.</p>
+        <span><a onclick="showPage('privacy')">Privacy</a> · <a onclick="showPage('terms')">Terms</a></span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══ PAGE: ABOUT ═══ -->
+<div class="page" id="page-about">
+  <div class="inner-hero">
+    <div class="section-label" style="margin-bottom:12px;">// ABOUT</div>
+    <h2>Built for Everyone</h2>
+    <p>ToolForge was created to make powerful file utilities freely accessible — no accounts, no paywalls.</p>
+  </div>
+  <div class="prose-wrap">
+    <h3>Our Mission</h3>
+    <p>Most productivity tools are locked behind subscriptions or require heavy software installs. ToolForge changes that. We believe essential file utilities — converting, compressing, analyzing — should be a few clicks away for anyone with a browser.</p>
+    <p>Every tool in our suite is hosted on Streamlit, meaning they run entirely in the cloud. You get the full power of Python-based processing without installing a single dependency.</p>
+    <div class="about-grid">
+      <div class="about-card"><div class="icon">🌐</div><h4>100% Browser-Based</h4><p>Open any tool from any device. No downloads, no accounts, ever.</p></div>
+      <div class="about-card"><div class="icon">🔒</div><h4>Privacy-Conscious</h4><p>Files are processed per-session and not retained. We don't sell your data.</p></div>
+      <div class="about-card"><div class="icon">🤖</div><h4>AI-Augmented</h4><p>Music generation and forensic analysis tools harness modern AI models.</p></div>
+      <div class="about-card"><div class="icon">🚀</div><h4>Always Improving</h4><p>Deployed on Streamlit Cloud — each tool updates automatically as we ship improvements.</p></div>
+    </div>
+    <h3>The Technology</h3>
+    <p>Each tool is a self-contained <strong>Streamlit application</strong> written in Python, leveraging libraries like PyPDF2, Pillow, python-docx, and AI inference APIs. This frontend site acts as a branded hub, directing you to the right app for each task.</p>
+    <h3>Contact</h3>
+    <p>Have a suggestion, bug report, or tool request? Reach us at <a href="mailto:contact@dipendu.me">contact@dipendu.me</a>.</p>
+  </div>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-bottom" style="border-top:none;padding-top:0;">
+        <p>© 2026 ToolForge. All rights reserved.</p>
+        <span><a onclick="showPage('privacy')">Privacy</a> · <a onclick="showPage('terms')">Terms</a></span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══ PAGE: PRIVACY ═══ -->
+<div class="page" id="page-privacy">
+  <div class="inner-hero">
+    <div class="section-label" style="margin-bottom:12px;">// LEGAL</div>
+    <h2>Privacy Policy</h2>
+    <p>We are transparent about how your data is handled when you use ToolForge.</p>
+  </div>
+  <div class="prose-wrap">
+    <div class="effective-date">Effective Date: May 9, 2026</div>
+    <h3>1. Information We Collect</h3>
+    <p>ToolForge is a static landing page. We do not run a backend, database, or authentication system. When you click a tool card, you are redirected to a Streamlit application hosted on Streamlit Community Cloud (<strong>streamlit.app</strong>). Standard web server logs (IP address, browser, page, timestamp) may be captured by our hosting provider. We do not set tracking cookies, analytics pixels, or advertising tags.</p>
+    <h3>2. File Uploads</h3>
+    <p>Files you upload to any Streamlit-hosted tool are processed within your session. We do not write uploaded files to permanent storage — they are deleted when your session ends. Please review <a href="https://streamlit.io/privacy-policy" target="_blank" rel="noopener noreferrer">Streamlit's Privacy Policy</a> for full details on how Streamlit handles uploaded data.</p>
+    <h3>3. Third-Party Services</h3>
+    <p>Our tools are hosted on Streamlit Community Cloud, operated by Snowflake Inc. By using our tools you also agree to:</p>
+    <ul>
+      <li><a href="https://streamlit.io/privacy-policy" target="_blank" rel="noopener noreferrer">Streamlit Privacy Policy</a></li>
+      <li><a href="https://www.snowflake.com/legal/" target="_blank" rel="noopener noreferrer">Snowflake Privacy Notice</a></li>
+    </ul>
+    <p>AI Music Maker and Forensic Detector may utilize third-party AI inference APIs. Data submitted to those tools may be processed by those services under their own policies.</p>
+    <h3>4. Cookies</h3>
+    <p>This landing page does not set or read cookies. Streamlit applications may set session cookies required for their operation, governed by Streamlit's cookie policy.</p>
+    <h3>5. Children's Privacy</h3>
+    <p>Our services are not directed at children under 13. We do not knowingly collect information from children. Contact us if you believe a child has submitted personal data.</p>
+    <h3>6. Changes to This Policy</h3>
+    <p>We may update this Privacy Policy from time to time. Changes are reflected by an updated effective date. Continued use after changes constitutes acceptance of the updated policy.</p>
+    <h3>7. Contact</h3>
+    <p>Privacy questions? Email <a href="mailto:compliance@dipendu.me">compliance@dipendu.me</a>.</p>
+  </div>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-bottom" style="border-top:none;padding-top:0;">
+        <p>© 2026 ToolForge. All rights reserved.</p>
+        <span><a onclick="showPage('terms')">Terms of Service</a></span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══ PAGE: TERMS ═══ -->
+<div class="page" id="page-terms">
+  <div class="inner-hero">
+    <div class="section-label" style="margin-bottom:12px;">// LEGAL</div>
+    <h2>Terms of Service</h2>
+    <p>Please read these terms carefully before using any ToolForge utility.</p>
+  </div>
+  <div class="prose-wrap">
+    <div class="effective-date">Effective Date: May 9, 2026</div>
+    <h3>1. Acceptance of Terms</h3>
+    <p>By accessing or using ToolForge ("the Site") and its linked tools, you agree to be bound by these Terms. If you do not agree, please do not use the Site.</p>
+    <h3>2. Description of Service</h3>
+    <p>ToolForge provides a directory of free, browser-based file utility tools hosted on Streamlit Community Cloud, including PDF processing, image manipulation, document compression, AI-generated music, and forensic file analysis. All tools are provided free of charge and "as-is."</p>
+    <h3>3. Acceptable Use</h3>
+    <p>You agree to use ToolForge only for lawful purposes. You must not:</p>
+    <ul>
+      <li>Upload files containing illegal content, malware, or content that infringes third-party intellectual property rights.</li>
+      <li>Use any tool to process, distribute, or generate defamatory, obscene, or harmful content.</li>
+      <li>Attempt to reverse-engineer, overload, or disrupt the Streamlit-hosted applications.</li>
+      <li>Automate bulk requests in a manner that degrades service for other users.</li>
+      <li>Use the AI Music Maker to generate content in violation of applicable copyright or music licensing laws.</li>
+    </ul>
+    <h3>4. Intellectual Property</h3>
+    <p>All content on this landing page — including the ToolForge name, logo, and written content — is owned by ToolForge. You may not reproduce or redistribute without written consent. Output generated by AI tools is provided for your use, subject to restrictions imposed by the underlying AI model providers.</p>
+    <h3>5. Disclaimer of Warranties</h3>
+    <p>ToolForge and its tools are provided <strong>"as is"</strong> and <strong>"as available"</strong> without warranties of any kind. We do not guarantee that tools will be error-free, uninterrupted, or meet your specific requirements. Use is at your own risk.</p>
+    <h3>6. Limitation of Liability</h3>
+    <p>To the maximum extent permitted by law, ToolForge shall not be liable for any indirect, incidental, special, consequential, or punitive damages — including loss of data, profits, or business — arising from your use of the tools, even if advised of the possibility of such damages.</p>
+    <h3>7. Third-Party Links</h3>
+    <p>Our tool cards link to Streamlit-hosted applications. We are not responsible for their availability, content, or privacy practices beyond what we directly control. Streamlit Community Cloud's own terms apply.</p>
+    <h3>8. Modifications</h3>
+    <p>We reserve the right to modify or discontinue any tool or the Site at any time without notice, and may update these Terms at any time. Continued use indicates acceptance of revised Terms.</p>
+    <h3>9. Governing Law</h3>
+    <p>These Terms are governed by applicable laws of the jurisdiction in which ToolForge operates. Any disputes shall be resolved in the appropriate courts of that jurisdiction.</p>
+    <h3>10. Contact</h3>
+    <p>Legal questions? Contact <a href="mailto:legal@dipendu.me">legal@dipendu.me</a>.</p>
+  </div>
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-bottom" style="border-top:none;padding-top:0;">
+        <p>© 2026 ToolForge. All rights reserved.</p>
+        <span><a onclick="showPage('privacy')">Privacy Policy</a></span>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+  /* ── Routing ── */
+  const PAGES = ['home','tools','about','privacy','terms'];
+
+  function showPage(name) {
+    PAGES.forEach(p => {
+      document.getElementById('page-' + p).classList.toggle('active', p === name);
+      document.getElementById('nav-'  + p).classList.toggle('active', p === name);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const links = document.getElementById('nav-links');
+    const ham   = document.getElementById('hamburger');
+    links.classList.remove('open');
+    ham.classList.remove('open');
+    history.pushState(null, '', '#' + name);
+    // Re-trigger reveal on page change
+    setTimeout(triggerReveal, 50);
+  }
+
+  function toggleMenu() {
+    document.getElementById('nav-links').classList.toggle('open');
+    document.getElementById('hamburger').classList.toggle('open');
+  }
+
+  function routeFromHash() {
+    const name = location.hash.replace('#','') || 'home';
+    if (PAGES.includes(name)) {
+      PAGES.forEach(p => {
+        document.getElementById('page-' + p).classList.toggle('active', p === name);
+        document.getElementById('nav-'  + p).classList.toggle('active', p === name);
+      });
+    }
+  }
+  window.addEventListener('popstate', routeFromHash);
+  routeFromHash();
+
+  /* ── Scroll reveal ── */
+  const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  function triggerReveal() {
+    document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+  }
+  triggerReveal();
+
+  /* ── Nav scroll / back-to-top ── */
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    document.getElementById('mainNav').classList.toggle('scrolled', y > 20);
+    document.getElementById('backTop').classList.toggle('visible', y > 400);
+  }, { passive: true });
+
+  /* ── Panel progress bar animation ── */
+  const bar = document.getElementById('pbar');
+  const pct = document.getElementById('pct');
+  if (bar) {
+    setTimeout(() => {
+      bar.style.width = '76%';
+      let n = 0;
+      const t = setInterval(() => {
+        n = Math.min(n + 1, 76);
+        pct.textContent = n + '%';
+        if (n >= 76) {
+          clearInterval(t);
+          // After "done", update status
+          setTimeout(() => {
+            pct.textContent = '✓ done';
+            pct.className = 'p-badge done';
+            bar.style.width = '100%';
+            bar.style.background = 'var(--green)';
+          }, 800);
         }
-        updateClock();
-        setInterval(updateClock, 1000);
+      }, 35);
+    }, 900);
+  }
 
-        /* ── Sequence ── */
-        const sequence = [
-            { text: '> INITIALIZING SECURE ENVIRONMENT...',  type: 'ok'    },
-            { text: '> ESTABLISHING CONNECTION...',           type: 'ok'    },
-            { text: '> MOUNTING DIRECTORIES...',              type: 'ok'    },
-            { text: '> COMPILING ASSETS...',                  type: 'ok'    },
-            { text: '> WARNING: FRONTEND INTERFACE MISSING.', type: 'warn'  },
-            { text: '> ERROR: SITE CURRENTLY UNDER DEVELOPMENT.', type: 'error' },
-        ];
+  /* ── Star canvas ── */
+  const canvas = document.getElementById('stars');
+  const ctx    = canvas.getContext('2d');
+  let W, H, stars = [];
 
-        const body    = document.getElementById('terminal-body');
-        const pWrap   = document.getElementById('progress-wrap');
-        const pFill   = document.getElementById('progress-fill');
-        const pct     = document.getElementById('pct');
-        const terminal = document.getElementById('terminal');
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
 
-        let lineIdx = 0, charIdx = 0;
-        let cursorEl = null;
+  function initStars() {
+    stars = Array.from({ length: 90 }, () => ({
+      x:  Math.random() * W,
+      y:  Math.random() * H,
+      r:  Math.random() * 1.1 + 0.2,
+      a:  Math.random() * 0.6 + 0.1,
+      da: (Math.random() - 0.5) * 0.004,
+      dx: (Math.random() - 0.5) * 0.04,
+      dy: (Math.random() - 0.5) * 0.04,
+    }));
+  }
 
-        function getOrCreateCursor() {
-            if (!cursorEl) {
-                cursorEl = document.createElement('span');
-                cursorEl.className = 'cursor';
-            }
-            return cursorEl;
-        }
+  function drawStars() {
+    ctx.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      s.a  = Math.max(0.05, Math.min(0.7, s.a + s.da));
+      if (s.a <= 0.05 || s.a >= 0.7) s.da *= -1;
+      s.x += s.dx; s.y += s.dy;
+      if (s.x < 0) s.x = W; if (s.x > W) s.x = 0;
+      if (s.y < 0) s.y = H; if (s.y > H) s.y = 0;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,210,255,${s.a * 0.45})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(drawStars);
+  }
 
-        function typeLine() {
-            if (lineIdx >= sequence.length) { launchProgress(); return; }
-
-            const { text, type } = sequence[lineIdx];
-
-            // Create line element on first char
-            if (charIdx === 0) {
-                const span = document.createElement('span');
-                span.className = 'line line--' + type;
-                span.id = 'line-' + lineIdx;
-                body.appendChild(span);
-                body.appendChild(getOrCreateCursor());
-            }
-
-            const lineEl = document.getElementById('line-' + lineIdx);
-
-            if (charIdx < text.length) {
-                lineEl.textContent += text[charIdx++];
-                setTimeout(typeLine, 22 + Math.random() * 45);
-            } else {
-                // Move cursor to after line break
-                lineEl.after(document.createElement('br'));
-                lineIdx++;
-                charIdx = 0;
-
-                // Occasional glitch on warning/error lines
-                if (sequence[lineIdx - 1]?.type !== 'ok') triggerGlitch();
-
-                setTimeout(typeLine, lineIdx < sequence.length ? 500 : 200);
-            }
-        }
-
-        function triggerGlitch() {
-            terminal.classList.add('glitching');
-            setTimeout(() => terminal.classList.remove('glitching'), 200);
-        }
-
-        function launchProgress() {
-            // Remove cursor when done typing
-            if (cursorEl && cursorEl.parentNode) cursorEl.remove();
-
-            pWrap.style.display = 'block';
-            let width = 0;
-
-            const interval = setInterval(() => {
-                width += Math.random() * 12 + 2;
-                if (width >= 100) {
-                    width = 100;
-                    clearInterval(interval);
-                    onComplete();
-                }
-                pFill.style.width = width + '%';
-                pct.textContent = Math.round(width) + '%';
-            }, 180);
-        }
-
-        function onComplete() {
-            const br  = document.createElement('br');
-            const msg = document.createElement('span');
-            msg.className = 'line standby';
-            msg.textContent = '> PLEASE STAND BY...';
-            body.appendChild(br);
-            body.appendChild(msg);
-
-            document.getElementById('status-badge').textContent = '● STANDBY';
-            document.getElementById('status-badge').style.color = 'var(--yellow)';
-        }
-
-        setTimeout(typeLine, 800);
-    </script>
+  resize(); initStars(); drawStars();
+  window.addEventListener('resize', () => { resize(); initStars(); }, { passive: true });
+</script>
 </body>
 </html>
