@@ -1,4 +1,3 @@
-```powershell
 #Requires -Version 5.1
 
 <#
@@ -81,20 +80,18 @@ if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
 
         $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-        $cmd = "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`""
-
         if ($IsAdmin) {
 
             Write-Host "[BOOTSTRAP] Launching script..." -ForegroundColor Cyan
 
-            powershell.exe $cmd
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ScriptPath
         }
         else {
 
             Write-Host "[BOOTSTRAP] Requesting administrator privileges..." -ForegroundColor Yellow
 
             Start-Process powershell.exe `
-                -ArgumentList $cmd `
+                -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`"" `
                 -Verb RunAs `
                 -Wait
         }
