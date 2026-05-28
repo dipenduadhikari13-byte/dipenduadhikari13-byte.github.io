@@ -246,10 +246,21 @@ function Restore-AllKeyboards {
         
         foreach ($instanceName in $disabled) {
             try {
+                # Try via registry first (more reliable)
+                $regPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$instanceName"
+                if (Test-Path $regPath) {
+                    Set-ItemProperty -Path $regPath -Name "Start" -Value 3 -ErrorAction SilentlyContinue
+                    Write-Host "[RESTORE] Re-enabled via registry: $instanceName" -ForegroundColor Green
+                }
+                
+                # Also try via PnP if registry didn't work
                 $device = Get-PnpDevice | Where-Object { $_.InstanceName -eq $instanceName }
                 if ($device) {
-                    $device | Enable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue
-                    Write-Host "[RESTORE] Re-enabled: $instanceName" -ForegroundColor Green
+                    try {
+                        $device | Enable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue
+                        Write-Host "[RESTORE] Re-enabled via PnP: $instanceName" -ForegroundColor Green
+                    }
+                    catch { }
                 }
             }
             catch { }
@@ -282,7 +293,10 @@ if (Test-Path $RegPath) {
     $disabled = Get-ItemProperty -Path $RegPath | Select-Object -ExpandProperty PSObject.Properties | Where-Object { $_.Name -notmatch '^PS' } | Select-Object -ExpandProperty Value
     foreach ($instanceName in $disabled) {
         try {
-            Disable-PnpDevice -InstanceName $instanceName -Confirm:$false -ErrorAction SilentlyContinue
+            $devRegPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$instanceName"
+            if (Test-Path $devRegPath) {
+                Set-ItemProperty -Path $devRegPath -Name "Start" -Value 4 -Force -ErrorAction SilentlyContinue
+            }
         }
         catch { }
     }
@@ -520,9 +534,37 @@ $btnDisable.Add_Click({
             
             $disabledAny = $false
             foreach ($dev in $devices) {
-                $dev | Disable-PnpDevice -Confirm:$false
-                Save-KeyboardDisableState -DeviceName $dev.FriendlyName -InstanceName $dev.InstanceName
-                $disabledAny = $true
+                $disabled = $false
+                
+                # Try disabling via registry (most reliable method)
+                $regPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$($dev.InstanceName)"
+                if (Test-Path $regPath) {
+                    try {
+                        Set-ItemProperty -Path $regPath -Name "Start" -Value 4 -Force -ErrorAction Stop
+                        Write-Host "[DISABLE] Device disabled via registry: $($dev.FriendlyName)" -ForegroundColor Green
+                        $disabled = $true
+                    }
+                    catch {
+                        Write-Host "[DISABLE] Registry method failed, trying PnP: $_" -ForegroundColor Yellow
+                    }
+                }
+                
+                # Try via PnP if registry didn't work
+                if (-not $disabled) {
+                    try {
+                        $dev | Disable-PnpDevice -Confirm:$false -ErrorAction Stop
+                        Write-Host "[DISABLE] Device disabled via PnP: $($dev.FriendlyName)" -ForegroundColor Green
+                        $disabled = $true
+                    }
+                    catch {
+                        Write-Host "[DISABLE] PnP method failed: $_" -ForegroundColor Yellow
+                    }
+                }
+                
+                if ($disabled) {
+                    Save-KeyboardDisableState -DeviceName $dev.FriendlyName -InstanceName $dev.InstanceName
+                    $disabledAny = $true
+                }
             }
 
             if ($disabledAny) {
