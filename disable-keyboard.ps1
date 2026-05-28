@@ -306,20 +306,23 @@ function Restore-AllKeyboards {
                 # Try via registry first (most reliable method for Windows 10 Pro and later)
                 $regPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$instanceName"
                 if (Test-Path $regPath) {
-                    # Value 3 = enabled in Windows Device Manager
-                    Set-ItemProperty -Path $regPath -Name "Start" -Value 3 -ErrorAction SilentlyContinue
+                    # Value 1 = System (auto-start) in Windows Device Manager
+                    Set-ItemProperty -Path $regPath -Name "Start" -Value 1 -ErrorAction SilentlyContinue
                     Write-Host "[RESTORE] Re-enabled via registry: $instanceName" -ForegroundColor Green
                 }
                 
-                # Also try via PnP if available
+                # Also try via PnP if available to force immediate enable
                 try {
                     $device = Get-PnpDevice | Where-Object { $_.InstanceName -eq $instanceName } -ErrorAction SilentlyContinue
                     if ($device) {
-                        $device | Enable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue
+                        # Force enable even if already appears enabled
+                        $device | Enable-PnpDevice -Confirm:$false -ErrorAction Stop
                         Write-Host "[RESTORE] Re-enabled via PnP: $instanceName" -ForegroundColor Green
                     }
                 }
-                catch { }
+                catch {
+                    Write-Host "[RESTORE] PnP enable failed (may still work after reboot): $_" -ForegroundColor Yellow
+                }
             }
             catch {
                 Write-Host "[RESTORE] Error restoring $instanceName : $_" -ForegroundColor Yellow
