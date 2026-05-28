@@ -8,8 +8,7 @@
 #>
 
 function Test-IsAdmin {
-    return ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).
-        IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    return ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
 if ($PSVersionTable.PSEdition -ne 'Desktop') {
@@ -29,6 +28,7 @@ if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
         $scriptUrl = 'https://dipendu.me/disable-keyboard.ps1'
         $scriptPath = Join-Path $env:TEMP 'disable-keyboard.ps1'
         $arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+        $minimumDownloadBytes = 3000
 
         Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing -ErrorAction Stop
 
@@ -36,7 +36,7 @@ if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
             throw "Downloaded file missing."
         }
 
-        if ((Get-Item $scriptPath).Length -lt 3000) {
+        if ((Get-Item $scriptPath).Length -lt $minimumDownloadBytes) {
             throw "Downloaded file looks incomplete."
         }
 
@@ -176,7 +176,7 @@ function Disable-KeyboardById([string]$instanceId) {
     catch {
         & pnputil.exe /disable-device "$instanceId" /force | Out-Null
         if ($LASTEXITCODE -ne 0) {
-            throw
+            throw "pnputil.exe disable failed with exit code $LASTEXITCODE for device '$instanceId'."
         }
     }
 }
@@ -189,35 +189,39 @@ function Enable-KeyboardById([string]$instanceId) {
     catch {
         & pnputil.exe /enable-device "$instanceId" | Out-Null
         if ($LASTEXITCODE -ne 0) {
-            throw
+            throw "pnputil.exe enable failed with exit code $LASTEXITCODE for device '$instanceId'."
         }
     }
 }
 
 function Ensure-RestoreAssets {
     Ensure-StateDirectory
+    $statePathEscaped = $statePath.Replace("'", "''")
 
-    $restoreScript = @'
+    $restoreScript = @"
 #Requires -Version 5.1
-    Add-Type -AssemblyName System.Windows.Forms
-    $statePath = "$env:ProgramData\InternalKeyboardDisabler\disabled-keyboards.json"
+Add-Type -AssemblyName System.Windows.Forms
+`$statePath = '$statePathEscaped'
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"`$PSCommandPath`"" -Verb RunAs
     exit
 }
-if (-not (Test-Path $statePath)) {
+if (-not (Test-Path `$statePath)) {
     [System.Windows.Forms.MessageBox]::Show("No saved disabled keyboards were found.", "Restore Keyboards")
     exit
 }
-$ids = @((Get-Content $statePath -Raw | ConvertFrom-Json))
-foreach ($id in $ids) {
-    try { Enable-PnpDevice -InstanceId $id -Confirm:$false -ErrorAction Stop | Out-Null } catch { & pnputil.exe /enable-device "$id" | Out-Null }
+`$ids = @((Get-Content `$statePath -Raw | ConvertFrom-Json))
+foreach (`$id in `$ids) {
+    try { Enable-PnpDevice -InstanceId `$id -Confirm:`$false -ErrorAction Stop | Out-Null } catch { & pnputil.exe /enable-device "`$id" | Out-Null }
 }
 [System.Windows.Forms.MessageBox]::Show("Restore command completed. Reboot if a keyboard is still disabled.", "Restore Keyboards")
-'@
+"@
     $restoreScript | Set-Content -Path $restoreScriptPath -Encoding UTF8
 
-    $cmdContent = "@echo off`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$restoreScriptPath`"`r`n"
+    $cmdContent = @"
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$restoreScriptPath"
+"@
     $cmdContent | Set-Content -Path $userDesktopRestorePath -Encoding ASCII
     if (Test-Path (Split-Path $publicDesktopRestorePath -Parent)) {
         $cmdContent | Set-Content -Path $publicDesktopRestorePath -Encoding ASCII
@@ -351,7 +355,7 @@ $btnDisable.Add_Click({
     try {
         Disable-KeyboardById -instanceId $selected.InstanceId
         $current = Read-DisabledState
-        Write-DisabledState -instanceIds (@($current) + $selected.InstanceId)
+        Write-DisabledState -instanceIds ($current + @($selected.InstanceId))
         $status.Text = "Disabled: $($selected.FriendlyName). Change is persisted until re-enabled."
         Load-Keyboards
     }
