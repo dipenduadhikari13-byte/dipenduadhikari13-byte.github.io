@@ -79,12 +79,7 @@ if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
 
         Write-Host "[BOOTSTRAP] Saved -> $ScriptPath" -ForegroundColor Green
 
-        $IsAdmin = (
-            [Security.Principal.WindowsPrincipal]
-            [Security.Principal.WindowsIdentity]::GetCurrent()
-        ).IsInRole(
-            [Security.Principal.WindowsBuiltInRole]::Administrator
-        )
+        $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
         $cmd = "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`""
 
@@ -128,12 +123,7 @@ if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
 # STAGE 2 -- ELEVATION
 # -----------------------------------------------------------------------------
 
-$IsAdmin = (
-    [Security.Principal.WindowsPrincipal]
-    [Security.Principal.WindowsIdentity]::GetCurrent()
-).IsInRole(
-    [Security.Principal.WindowsBuiltInRole]::Administrator
-)
+$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
 if (-not $IsAdmin) {
 
