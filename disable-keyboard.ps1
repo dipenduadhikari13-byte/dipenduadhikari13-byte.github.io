@@ -49,7 +49,10 @@ if ($PSVersionTable.PSEdition -ne 'Desktop') {
 # STAGE 1 -- irm | iex BOOTSTRAP
 # -----------------------------------------------------------------------------
 
-if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
+# Create a lock file to prevent bootstrap loops
+$BootstrapLock = Join-Path $env:TEMP "keyboard-disabler.lock"
+
+if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName) -and -not (Test-Path $BootstrapLock)) {
 
     Write-Host ""
     Write-Host "[BOOTSTRAP] Running from memory..." -ForegroundColor Cyan
@@ -80,11 +83,18 @@ if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
 
         $IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
+        # Create lock file to prevent bootstrap loop
+        $null = New-Item -Path $BootstrapLock -Force -ErrorAction SilentlyContinue
+
         if ($IsAdmin) {
 
             Write-Host "[BOOTSTRAP] Launching script..." -ForegroundColor Cyan
 
             & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ScriptPath
+            
+            # Clean up lock file
+            Remove-Item -Path $BootstrapLock -Force -ErrorAction SilentlyContinue
+            exit
         }
         else {
 
@@ -94,6 +104,9 @@ if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
                 -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`"" `
                 -Verb RunAs `
                 -Wait
+            
+            # Clean up lock file
+            Remove-Item -Path $BootstrapLock -Force -ErrorAction SilentlyContinue
         }
 
     }
@@ -111,6 +124,9 @@ if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
         Write-Host ""
 
         pause
+        
+        # Clean up lock file
+        Remove-Item -Path $BootstrapLock -Force -ErrorAction SilentlyContinue
     }
 
     return
