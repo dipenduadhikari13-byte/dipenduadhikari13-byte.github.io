@@ -1,0 +1,7 @@
+kb2.ps1
+kb.ps1
+changelog.txt
+*.log
+*.tmp
+.cache/
+.vscode/
