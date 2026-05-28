@@ -1,16 +1,59 @@
-# ┌─────────────────────────────────────────────────────────────────────────┐
-# │  Internal Keyboard Disabler  v4.0                                       │
-# │  Usage:  irm https://example.com/disable-keyboard.ps1 | iex                     
-# │  Run from an admin PowerShell window, or it will self-elevate.          │
-# └─────────────────────────────────────────────────────────────────────────┘
-# ── STAGE 0: irm | iex bootstrap ─────────────────────────────────────────────
+# +-------------------------------------------------------------------------+
+# |  Internal Keyboard Disabler  v4.0                                       |
+# |  Usage:  irm https://myname.me/disable-keyboard.ps1 | iex                            |
+# |  Run from an admin PowerShell window, or it will self-elevate.          |
+# +-------------------------------------------------------------------------+
+#
+# WHAT CHANGED FROM v3.0
+# ----------------------
+# BUG FIX (CRITICAL)  --  Layer 3 UpperFilters "KbdBlock" REMOVED.
+#   KbdBlock is a phantom driver that doesn't exist on any Windows install.
+#   Windows would fail to load the driver for EVERY keyboard in the class,
+#   including external USB keyboards  --  exactly the opposite of what was wanted.
+#   Replaced with a SYSTEM scheduled task (safe, device-specific, persistent).
+#
+# BUG FIX (CRITICAL)  --  No persistence against Windows Update.
+#   Layer 1 (PnP disable) can be silently re-enabled by Windows Update or
+#   driver reinstallation.  Scheduled task at startup re-disables by InstanceId.
+#
+# BUG FIX (CRITICAL)  --  Revert didn't remove the scheduled task.
+#   After reverting, the re-disable task would fire on next boot and re-block
+#   the keyboard again.  Revert now unregisters the task.
+#
+# BUG FIX  --  $MyInvocation.ScriptName null vs empty-string.
+#   Original: -eq ''  fails when ScriptName is $null.
+#   Fixed: [string]::IsNullOrEmpty()
+#
+# BUG FIX  --  DenyDeviceIDs always wrote to value name "1", overwriting any
+#   existing policy entries.  Now enumerates and uses the next free slot.
+#
+# BUG FIX  --  Font "Cascadia Code,Consolas" is CSS syntax; WinForms ignores
+#   everything after the comma.  Fixed with a proper font availability check.
+#
+# UX FIX  --  Emergency recovery required navigating a file-picker dialog with
+#   no keyboard.  New always-visible orange panel + one-click button finds
+#   the latest backup automatically  --  pure mouse operation.
+#
+# UX FIX  --  Auto-scan keyboards on startup so the list is populated without
+#   the user needing to remember to click Refresh.
+#
+# UX FIX  --  Revert auto-offers the most-recent backup first; file dialog is
+#   a fallback only.
+#
+# UX FIX  --  Internal detection improved to also catch HID-over-I2C devices
+#   (newer laptops that use I2C instead of PS/2 or legacy ACPI).
+# -----------------------------------------------------------------------------
+
+# -- STAGE 0: irm | iex bootstrap ---------------------------------------------
 # iex runs script blocks without a ScriptName.  Detect that, save to disk,
 # relaunch as a real .ps1 file so param(), #Requires, and UAC all work.
 if ([string]::IsNullOrEmpty($MyInvocation.ScriptName)) {
     $tmp = "$env:TEMP\kb_disabler_run.ps1"
     $url = 'https://dipendu.me/disable-keyboard.ps1'
     try {
-        (New-Object System.Net.WebClient).DownloadFile($url, $tmp)
+        $wc = New-Object System.Net.WebClient
+        \$wc.Encoding = [System.Text.Encoding]::UTF8
+        $wc.DownloadFile($url, $tmp)
     } catch {
         # Fallback: write the script block text that iex already compiled
         try {
@@ -34,7 +77,7 @@ if ([string]::IsNullOrEmpty($MyInvocation.ScriptName)) {
     return   # exit the iex session cleanly
 }
 
-# ── STAGE 1: self-elevate if not already admin ──────────────────────────────
+# -- STAGE 1: self-elevate if not already admin ------------------------------
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
            ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
@@ -44,19 +87,19 @@ if (-not $isAdmin) {
     exit
 }
 
-# ── STAGE 2: relax execution policy for this process only ───────────────────
+# -- STAGE 2: relax execution policy for this process only -------------------
 Set-ExecutionPolicy Bypass -Scope Process -Force
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  ASSEMBLIES
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  GLOBALS
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 $script:BackupDir  = $env:TEMP
 $script:BackupFile = "$script:BackupDir\KB_Backup_$(Get-Date -Format yyyyMMdd_HHmm).xml"
 $script:LogFile    = "$env:TEMP\KB_Log_$(Get-Date -Format yyyyMMdd_HHmm).txt"
@@ -71,9 +114,9 @@ function Write-Log {
     Add-Content $script:LogFile $line -Encoding UTF8
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  OS DETECTION
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 function Get-OSInfo {
     $os = Get-CimInstance Win32_OperatingSystem
     $script:OSBuild   = [int]$os.BuildNumber
@@ -82,9 +125,9 @@ function Get-OSInfo {
     Write-Log "OS=$($script:OSEdition) Build=$($script:OSBuild) IsPro=$($script:IsPro)"
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  KEYBOARD ENUMERATION
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 function Get-AllKeyboards {
     try {
         Get-PnpDevice -Class Keyboard -EA SilentlyContinue |
@@ -100,9 +143,9 @@ function Test-IsLikelyInternal($dev) {
     if ($id -match 'ACPI\\|PNP0303|PNP030B') { return $true }
     # Legacy name hints
     if ($nm -match 'PS/2|Standard|i8042')     { return $true }
-    # HID-over-I2C (Surface, newer Acer/Dell/HP) — contains I2C in the path
+    # HID-over-I2C (Surface, newer Acer/Dell/HP)  --  contains I2C in the path
     if ($id -match 'I2C\\')                   { return $true }
-    # HID device that is NOT on USB — likely soldered internal HID-over-I2C
+    # HID device that is NOT on USB  --  likely soldered internal HID-over-I2C
     if ($id -match '^HID\\' -and $id -notmatch 'USB') { return $true }
     return $false
 }
@@ -114,9 +157,9 @@ function Get-LatestBackup {
         Select-Object -First 1
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  BACKUP
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 function Save-Backup($dev) {
     $b = @{
         Timestamp    = (Get-Date).ToString('o')
@@ -128,47 +171,58 @@ function Save-Backup($dev) {
     }
     try { $b.RegI8042 = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\i8042prt' -Name Start -EA Stop).Start } catch {}
     $b | Export-Clixml $script:BackupFile -Force
-    Write-Log "Backup saved → $($script:BackupFile)"
+    Write-Log "Backup saved -> $($script:BackupFile)"
     return $script:BackupFile
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  DISABLE  (all layers — all device-specific, external keyboard is safe)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+#  DISABLE  (all layers  --  all device-specific, external keyboard is safe)
+# -----------------------------------------------------------------------------
 function Disable-InternalKeyboard($dev, [ref]$msgs) {
     $out = [System.Collections.Generic.List[string]]::new()
     $ok  = $false
 
-    # ── Layer 1 ─ PnP device disable (immediate, device-specific) ────────────
+    # -- Layer 1 - PnP device disable (immediate, device-specific) ------------
     try {
         Disable-PnpDevice -InstanceId $dev.InstanceId -Confirm:$false -EA Stop
-        $out.Add('[OK] Layer 1 — Device Manager: internal keyboard disabled.')
+        $out.Add('[OK] Layer 1  --  Device Manager: internal keyboard disabled.')
         Write-Log "L1 PnP disabled: $($dev.InstanceId)"
         $ok = $true
     } catch {
-        $out.Add("[!!] Layer 1 — PnP disable failed: $_")
+        $out.Add("[!!] Layer 1  --  PnP disable failed: $_")
         Write-Log "L1 PnP fail: $_" 'WARN'
     }
 
-    # ── Layer 2 ─ i8042prt registry (PS/2 / legacy; USB keyboards unaffected) ─
+    # -- Layer 2 - i8042prt registry (PS/2 / legacy; USB keyboards unaffected) -
     # i8042prt is the PS/2 port driver.  USB keyboards use usbhid, not i8042prt,
     # so setting Start=4 here cannot touch an external USB keyboard.
     try {
         $rp = 'HKLM:\SYSTEM\CurrentControlSet\Services\i8042prt'
         if (Test-Path $rp) {
             Set-ItemProperty $rp -Name Start -Value 4 -Type DWord -Force
-            $out.Add('[OK] Layer 2 — PS/2 driver (i8042prt) disabled in registry. Survives reboot.')
+            $out.Add('[OK] Layer 2  --  PS/2 driver (i8042prt) disabled in registry. Survives reboot.')
             Write-Log 'L2 i8042prt Start=4'
             $ok = $true
         } else {
-            $out.Add('[--] Layer 2 — i8042prt not present (HID-over-I2C device). Covered by Layers 1 & 3.')
+            $out.Add('[--] Layer 2  --  i8042prt not present (HID-over-I2C device). Covered by Layers 1 & 3.')
         }
     } catch {
-        $out.Add("[!!] Layer 2 — i8042prt registry write failed: $_")
+        $out.Add("[!!] Layer 2  --  i8042prt registry write failed: $_")
         Write-Log "L2 i8042prt fail: $_" 'WARN'
     }
 
-    # ── Layer 3 ─ Scheduled task: re-disable the SPECIFIC device on every boot ─
+    # -- Layer 3 - Scheduled task: re-disable the SPECIFIC device on every boot -
+    #
+    # WHY THIS REPLACES THE OLD UpperFilters "KbdBlock" APPROACH:
+    #   The old Layer 3 added "KbdBlock" to the UpperFilters registry value for
+    #   the entire Keyboard device class {4D36E96B-...}.  "KbdBlock" is a
+    #   non-existent driver  --  Windows cannot load it and marks every keyboard in
+    #   the class with Code 39 (driver load failure), including external USB
+    #   keyboards.  That is catastrophic for a user whose internal keyboard is
+    #   already broken.
+    #
+    #   This scheduled task targets only the specific InstanceId that was
+    #   selected, runs at startup as SYSTEM, and survives Windows Update.
     try {
         $iid     = $dev.InstanceId
         $psCmd   = "Disable-PnpDevice -InstanceId '$iid' -Confirm:`$false -ErrorAction SilentlyContinue"
@@ -180,17 +234,17 @@ function Disable-InternalKeyboard($dev, [ref]$msgs) {
         $princ   = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
         Register-ScheduledTask -TaskName $script:TaskName -Action $action `
             -Trigger $trigger -Settings $sett -Principal $princ -Force -EA Stop | Out-Null
-        $out.Add('[OK] Layer 3 — Startup task created: keyboard stays disabled after reboots and Windows Update.')
+        $out.Add('[OK] Layer 3  --  Startup task created: keyboard stays disabled after reboots and Windows Update.')
         Write-Log "L3 Scheduled task registered for: $iid"
         $ok = $true
     } catch {
-        $out.Add("[!!] Layer 3 — Scheduled task creation failed: $_")
+        $out.Add("[!!] Layer 3  --  Scheduled task creation failed: $_")
         Write-Log "L3 task fail: $_" 'WARN'
     }
 
-    # ── Layer 4 ─ Group Policy Hardware-ID block (Pro/Enterprise/Education) ───
+    # -- Layer 4 - Group Policy Hardware-ID block (Pro/Enterprise/Education) ---
     # Prevents Windows from re-enabling the device via plug-and-play.
-    # Uses the specific hardware ID of this device — no other device is affected.
+    # Uses the specific hardware ID of this device  --  no other device is affected.
     if ($script:IsPro) {
         try {
             $gp  = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Restrictions'
@@ -209,26 +263,26 @@ function Disable-InternalKeyboard($dev, [ref]$msgs) {
                 Set-ItemProperty $gid -Name "$nextNum"        -Value $hwId -Type String -Force
                 Set-ItemProperty $gp  -Name 'DenyDeviceIDs'   -Value 1    -Type DWord  -Force
                 Set-ItemProperty $gp  -Name 'DenyDeviceIDsRetroactive' -Value 1 -Type DWord -Force
-                $out.Add("[OK] Layer 4 — Windows policy HW-ID block applied: $hwId")
+                $out.Add("[OK] Layer 4  --  Windows policy HW-ID block applied: $hwId")
                 Write-Log "L4 GPO block: $hwId (slot $nextNum)"
             } else {
-                $out.Add('[--] Layer 4 — Could not read hardware ID. Layers 1–3 still active.')
+                $out.Add('[--] Layer 4  --  Could not read hardware ID. Layers 1 - 3 still active.')
             }
         } catch {
-            $out.Add("[!!] Layer 4 — Policy write failed: $_")
+            $out.Add("[!!] Layer 4  --  Policy write failed: $_")
             Write-Log "L4 GPO fail: $_" 'WARN'
         }
     } else {
-        $out.Add('[--] Layer 4 — Skipped (Windows Home). Layers 1–3 provide sufficient persistence.')
+        $out.Add('[--] Layer 4  --  Skipped (Windows Home). Layers 1 - 3 provide sufficient persistence.')
     }
 
     $msgs.Value = $out
     return $ok
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  REVERT  (undo all layers)
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 function Invoke-Revert($path) {
     $out = [System.Collections.Generic.List[string]]::new()
     if (-not (Test-Path $path)) { return @("[!!] Backup not found: $path") }
@@ -250,7 +304,7 @@ function Invoke-Revert($path) {
             } catch { $out.Add("[!!] i8042prt restore: $_") }
         }
 
-        # CRITICAL: remove the startup re-disable task — otherwise the keyboard
+        # CRITICAL: remove the startup re-disable task  --  otherwise the keyboard
         # gets re-disabled again on the very next boot after the user reverts.
         try {
             Unregister-ScheduledTask -TaskName $script:TaskName -Confirm:$false -EA Stop
@@ -283,9 +337,9 @@ function Invoke-Revert($path) {
     return $out
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 #  GUI
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 function Show-GUI {
     Get-OSInfo
 
@@ -318,7 +372,7 @@ function Show-GUI {
         mon  = New-Object System.Drawing.Font($monoFace, 8)
     }
 
-    # ── Form ─────────────────────────────────────────────────────────────────
+    # -- Form -----------------------------------------------------------------
     $form = New-Object System.Windows.Forms.Form
     $form.Text            = 'Keyboard Disabler v4.0'
     $form.Size            = New-Object System.Drawing.Size(780, 680)
@@ -346,13 +400,13 @@ function Show-GUI {
         $parent.Controls.Add($b); return $b
     }
 
-    # ── Title bar ─────────────────────────────────────────────────────────────
-    Label '  ⌨  Internal Keyboard Disabler' 0 0 780 46 $F.ttl $C.acc $C.bg1
-    $osStr = "$($script:OSEdition -replace 'Microsoft Windows ','Win ')  ·  Build $($script:OSBuild)  ·  " +
-             $(if($script:IsPro){'Pro/Ent — all 4 layers active'}else{'Home — 3 layers active'})
+    # -- Title bar -------------------------------------------------------------
+    Label '  [KB]  Internal Keyboard Disabler' 0 0 780 46 $F.ttl $C.acc $C.bg1
+    $osStr = "$($script:OSEdition -replace 'Microsoft Windows ','Win ')  *  Build $($script:OSBuild)  *  " +
+             $(if($script:IsPro){'Pro/Ent  --  all 4 layers active'}else{'Home  --  3 layers active'})
     Label "  $osStr" 0 46 780 22 $F.ui $C.grn $C.bg2
 
-    # ── Emergency recovery panel (always visible; fully mouse-operable) ───────
+    # -- Emergency recovery panel (always visible; fully mouse-operable) -------
     # This panel must stay visible and functional even after a disable operation
     # goes wrong and leaves the user with NO keyboard at all.
     $pnlEmr = New-Object System.Windows.Forms.Panel
@@ -362,7 +416,7 @@ function Show-GUI {
     $form.Controls.Add($pnlEmr)
 
     $lblEmr = New-Object System.Windows.Forms.Label
-    $lblEmr.Text      = "  ⚠  KEYBOARD NOT WORKING?`n  Click the button →  it finds your backup automatically"
+    $lblEmr.Text      = "  [!]  KEYBOARD NOT WORKING?`n  Click the button ->  it finds your backup automatically"
     $lblEmr.Location  = New-Object System.Drawing.Point(8, 4)
     $lblEmr.Size      = New-Object System.Drawing.Size(460, 50)
     $lblEmr.Font      = $F.hd
@@ -370,7 +424,7 @@ function Show-GUI {
     $pnlEmr.Controls.Add($lblEmr)
 
     $btnEmrRecover = New-Object System.Windows.Forms.Button
-    $btnEmrRecover.Text      = "🔓  EMERGENCY RECOVER  (1-Click)"
+    $btnEmrRecover.Text      = "[UNLOCK]  EMERGENCY RECOVER  (1-Click)"
     $btnEmrRecover.Location  = New-Object System.Drawing.Point(468, 9)
     $btnEmrRecover.Size      = New-Object System.Drawing.Size(300, 40)
     $btnEmrRecover.BackColor = $C.emr
@@ -381,8 +435,8 @@ function Show-GUI {
     $btnEmrRecover.Cursor    = 'Hand'
     $pnlEmr.Controls.Add($btnEmrRecover)
 
-    # ── Step 1 ────────────────────────────────────────────────────────────────
-    Label 'STEP 1  —  Select the keyboard to disable' 16 138 700 20 $F.hd $C.pur
+    # -- Step 1 ----------------------------------------------------------------
+    Label 'STEP 1   --   Select the keyboard to disable' 16 138 700 20 $F.hd $C.pur
 
     $lv = New-Object System.Windows.Forms.ListView
     $lv.Location = New-Object System.Drawing.Point(16,160)
@@ -394,19 +448,19 @@ function Show-GUI {
         ForEach-Object { [void]$lv.Columns.Add($_[0],[int]$_[1]) }
     $form.Controls.Add($lv)
 
-    $btnRefresh = Btn '↺  Refresh List'             16 288 190 34 ([System.Drawing.Color]::FromArgb(20,50,110)) $C.acc
+    $btnRefresh = Btn '[R]  Refresh List'             16 288 190 34 ([System.Drawing.Color]::FromArgb(20,50,110)) $C.acc
     $btnTest    = Btn '?  Help Identify Internal'   218 288 220 34 ([System.Drawing.Color]::FromArgb(20,70,40)) $C.grn
 
-    # ── Step 2 ────────────────────────────────────────────────────────────────
-    Label 'STEP 2  —  Action' 16 336 700 20 $F.hd $C.pur
+    # -- Step 2 ----------------------------------------------------------------
+    Label 'STEP 2   --   Action' 16 336 700 20 $F.hd $C.pur
 
-    $btnDisable = Btn '⛔  DISABLE Selected Keyboard  (permanent)' 16 360 360 42 $C.red ([System.Drawing.Color]::White)
-    $btnRevert  = Btn '↩  Revert / Re-enable'                      390 360 220 42 ([System.Drawing.Color]::FromArgb(20,80,45)) $C.grn
-    $btnLog     = Btn '📋  Open Log'                                622 360 134 42 $C.bg2 $C.dim
+    $btnDisable = Btn '[X]  DISABLE Selected Keyboard  (permanent)' 16 360 360 42 $C.red ([System.Drawing.Color]::White)
+    $btnRevert  = Btn '<-  Revert / Re-enable'                      390 360 220 42 ([System.Drawing.Color]::FromArgb(20,80,45)) $C.grn
+    $btnLog     = Btn '[LOG]  Open Log'                                622 360 134 42 $C.bg2 $C.dim
 
     $btnDisable.Enabled = $false
 
-    # ── Status box ───────────────────────────────────────────────────────────
+    # -- Status box -----------------------------------------------------------
     Label 'STATUS' 16 416 80 16 $F.hd $C.pur
     $rtb = New-Object System.Windows.Forms.RichTextBox
     $rtb.Location   = New-Object System.Drawing.Point(16,434)
@@ -415,11 +469,11 @@ function Show-GUI {
     $rtb.Font       = $F.mon; $rtb.BorderStyle='None'; $rtb.ScrollBars='Vertical'
     $form.Controls.Add($rtb)
 
-    # ── Footer ───────────────────────────────────────────────────────────────
-    Label '  Backup auto-saved before every disable   ·   external USB keyboard is NOT affected by any layer' `
+    # -- Footer ---------------------------------------------------------------
+    Label '  Backup auto-saved before every disable   *   external USB keyboard is NOT affected by any layer' `
           0 640 780 32 $F.ui $C.dim $C.bg2
 
-    # ── Inner helpers ─────────────────────────────────────────────────────────
+    # -- Inner helpers ---------------------------------------------------------
     function Log($msg,$color=$C.grn) {
         $rtb.SelectionStart=$rtb.TextLength; $rtb.SelectionLength=0
         $rtb.SelectionColor=$color; $rtb.AppendText("$msg`n")
@@ -429,15 +483,15 @@ function Show-GUI {
     function Update-EmergencyButton {
         $latest = Get-LatestBackup
         if ($latest) {
-            $btnEmrRecover.Text = "🔓  EMERGENCY RECOVER  (1-Click)`nBackup: $($latest.Name)"
+            $btnEmrRecover.Text = "[UNLOCK]  EMERGENCY RECOVER  (1-Click)`nBackup: $($latest.Name)"
         } else {
-            $btnEmrRecover.Text = "🔓  EMERGENCY RECOVER`n(no backup found yet)"
+            $btnEmrRecover.Text = "[UNLOCK]  EMERGENCY RECOVER`n(no backup found yet)"
         }
     }
 
     function LoadKBs {
         $lv.Items.Clear()
-        Log 'Scanning keyboards…' $C.acc
+        Log 'Scanning keyboards...' $C.acc
         $kbs = Get-AllKeyboards
         if (-not $kbs) { Log '[!] No keyboards found.' $C.red; return }
         $i = 1
@@ -446,7 +500,7 @@ function Show-GUI {
             $item = New-Object System.Windows.Forms.ListViewItem($i.ToString())
             [void]$item.SubItems.Add($k.FriendlyName)
             [void]$item.SubItems.Add($k.Status)
-            [void]$item.SubItems.Add($(if($internal){'YES  ★'}else{'no'}))
+            [void]$item.SubItems.Add($(if($internal){'YES  *'}else{'no'}))
             [void]$item.SubItems.Add($k.InstanceId)
             $item.Tag = $k
             if ($internal) {
@@ -461,7 +515,7 @@ function Show-GUI {
     }
 
     function DoRevert($backupPath) {
-        Log "▸ Reverting from: $(Split-Path $backupPath -Leaf)…" $C.acc
+        Log "> Reverting from: $(Split-Path $backupPath -Leaf)..." $C.acc
         $rr = Invoke-Revert $backupPath
         foreach ($m in $rr) {
             $col = if     ($m -match '^\[OK\]') { $C.grn }
@@ -472,14 +526,14 @@ function Show-GUI {
         LoadKBs
         [System.Windows.Forms.MessageBox]::Show(
             "Recovery complete!`n`nPlease RESTART your PC to fully restore your keyboard.",
-            'Recovery Done — Restart Required',
+            'Recovery Done  --  Restart Required',
             [System.Windows.Forms.MessageBoxButtons]::OK,
             [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
     }
 
-    # ── Events ───────────────────────────────────────────────────────────────
+    # -- Events ---------------------------------------------------------------
 
-    # Emergency recover — one click, no keyboard needed
+    # Emergency recover  --  one click, no keyboard needed
     $btnEmrRecover.Add_Click({
         $latest = Get-LatestBackup
         if (-not $latest) {
@@ -512,11 +566,11 @@ function Show-GUI {
             "1. Unplug your external USB keyboard.`n" +
             "2. Try typing on the laptop's built-in keys.`n" +
             "3. Plug the external keyboard back in.`n" +
-            "4. Click 'Refresh List' — the entry that STAYS is the internal one.`n`n" +
+            "4. Click 'Refresh List'  --  the entry that STAYS is the internal one.`n`n" +
             "What to look for:`n" +
-            "  • Rows highlighted in orange (marked YES  ★)`n" +
-            "  • Instance IDs starting with ACPI\\ or I2C\\`n" +
-            "  • Names like 'Standard PS/2 Keyboard' or 'HID Keyboard Device'`n`n" +
+            "  - Rows highlighted in orange (marked YES  *)`n" +
+            "  - Instance IDs starting with ACPI\\ or I2C\\`n" +
+            "  - Names like 'Standard PS/2 Keyboard' or 'HID Keyboard Device'`n`n" +
             "Your external USB keyboard will say 'USB' in its Instance ID and will`n" +
             "DISAPPEAR from the list when you unplug it.",
             'Identify Internal Keyboard',
@@ -536,24 +590,24 @@ function Show-GUI {
             "  $($dev.FriendlyName)`n" +
             "  ID: $($dev.InstanceId)`n`n" +
             "What will happen:`n" +
-            "  ✔ A backup is saved first (used by Emergency Recover).`n" +
-            "  ✔ Your external USB keyboard will NOT be affected.`n" +
-            "  ✔ A startup task ensures it stays disabled after updates/reboots.`n`n" +
+            "  [+] A backup is saved first (used by Emergency Recover).`n" +
+            "  [+] Your external USB keyboard will NOT be affected.`n" +
+            "  [+] A startup task ensures it stays disabled after updates/reboots.`n`n" +
             "If anything goes wrong after restarting:`n" +
-            "  → Run this script again`n" +
-            "  → Click the orange EMERGENCY RECOVER button at the top`n`n" +
+            "  -> Run this script again`n" +
+            "  -> Click the orange EMERGENCY RECOVER button at the top`n`n" +
             "Continue?",
             'Confirm Disable',
             [System.Windows.Forms.MessageBoxButtons]::YesNo,
             [System.Windows.Forms.MessageBoxIcon]::Warning)
         if ($ans -ne 'Yes') { Log 'Cancelled.' $C.dim; return }
 
-        Log ''; Log '▸ Saving backup…' $C.acc
+        Log ''; Log '> Saving backup...' $C.acc
         $bk = Save-Backup $dev
         Log "  Backup: $bk" $C.dim
         Update-EmergencyButton
 
-        Log '▸ Applying disable layers…' $C.gold
+        Log '> Applying disable layers...' $C.gold
         $r  = [ref]@()
         $ok = Disable-InternalKeyboard $dev $r
         foreach ($line in $r.Value) {
@@ -565,18 +619,18 @@ function Show-GUI {
 
         Log ''
         if ($ok) {
-            Log '▸  ALL DONE.  Please restart your PC now.' $C.gold
+            Log '>  ALL DONE.  Please restart your PC now.' $C.gold
             [System.Windows.Forms.MessageBox]::Show(
                 "Internal keyboard disabled!`n`n" +
                 "Please RESTART your PC to apply all layers.`n`n" +
                 "If anything goes wrong after restarting, run this script again`n" +
                 "and click the orange EMERGENCY RECOVER button.`n`n" +
                 "Backup saved at:`n$bk",
-                'Done — Restart Required',
+                'Done  --  Restart Required',
                 [System.Windows.Forms.MessageBoxButtons]::OK,
                 [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
         } else {
-            Log '▸  One or more layers failed — see STATUS above.' $C.red
+            Log '>  One or more layers failed  --  see STATUS above.' $C.red
         }
         LoadKBs
     })
@@ -610,13 +664,13 @@ function Show-GUI {
         else { Log 'No log file yet.' $C.dim }
     })
 
-    # ── Startup ───────────────────────────────────────────────────────────────
-    Log "Keyboard Disabler v4.0  —  $(Get-Date -Format 'yyyy-MM-dd HH:mm')" $C.acc
+    # -- Startup ---------------------------------------------------------------
+    Log "Keyboard Disabler v4.0   --   $(Get-Date -Format 'yyyy-MM-dd HH:mm')" $C.acc
     Log "OS: $($script:OSEdition)  Build $($script:OSBuild)" $C.dim
     Log $(if($script:IsPro) {
-             'Edition: Pro/Enterprise — all 4 layers will be applied.'
+             'Edition: Pro/Enterprise  --  all 4 layers will be applied.'
           } else {
-             'Edition: Home — Layers 1-3 active (PnP + i8042prt + startup task).'
+             'Edition: Home  --  Layers 1-3 active (PnP + i8042prt + startup task).'
           }) $C.grn
     $existingTask = Get-ScheduledTask -TaskName $script:TaskName -EA SilentlyContinue
     if ($existingTask) {
