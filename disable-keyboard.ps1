@@ -43,40 +43,104 @@
 # UX FIX  --  Internal detection improved to also catch HID-over-I2C devices
 #   (newer laptops that use I2C instead of PS/2 or legacy ACPI).
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# STAGE 0 -- irm | iex bootstrap (hardened)
+# -----------------------------------------------------------------------------
+#
+# Detect execution through:
+#   irm https://site/script.ps1 | iex
+#
+# iex runs in-memory with no real script path, which breaks:
+#   - self elevation
+#   - param()
+#   - scheduled task references
+#   - restart/relaunch logic
+#
+# Solution:
+#   1. Save the script to disk
+#   2. Relaunch as a normal .ps1
+#   3. Exit the in-memory session
+#
+# -----------------------------------------------------------------------------
 
-# -- STAGE 0: irm | iex bootstrap ---------------------------------------------
-# iex runs script blocks without a ScriptName.  Detect that, save to disk,
-# relaunch as a real .ps1 file so param(), #Requires, and UAC all work.
-if ([string]::IsNullOrEmpty($MyInvocation.ScriptName)) {
-    $tmp = "$env:TEMP\kb_disabler_run.ps1"
-    $url = 'https://dipendu.me/disable-keyboard.ps1'
+if ([string]::IsNullOrWhiteSpace($MyInvocation.ScriptName)) {
+
+    Write-Host "`n[BOOTSTRAP] Preparing local execution..." -ForegroundColor Cyan
+
     try {
-        $wc = New-Object System.Net.WebClient
-        \$wc.Encoding = [System.Text.Encoding]::UTF8
-        $wc.DownloadFile($url, $tmp)
-    } catch {
-        # Fallback: write the script block text that iex already compiled
-        try {
-            $src = $MyInvocation.ScriptBlock.Ast.Extent.Text
-            [System.IO.File]::WriteAllText($tmp, $src, [System.Text.Encoding]::UTF8)
-        } catch {
-            Write-Host "ERROR: Could not save script to disk: $_" -ForegroundColor Red
-            return
+
+        # ---- CONFIG ---------------------------------------------------------
+        $ScriptUrl  = 'https://dipendu.me/disable-keyboard.ps1'
+        $ScriptPath = Join-Path $env:TEMP 'disable-keyboard.ps1'
+
+        # ---- DOWNLOAD -------------------------------------------------------
+        Write-Host "[BOOTSTRAP] Downloading latest script..." -ForegroundColor Yellow
+
+        Invoke-WebRequest `
+            -Uri $ScriptUrl `
+            -OutFile $ScriptPath `
+            -UseBasicParsing
+
+        # ---- VALIDATION -----------------------------------------------------
+        if (-not (Test-Path $ScriptPath)) {
+            throw "Downloaded file does not exist."
         }
+
+        $size = (Get-Item $ScriptPath).Length
+
+        if ($size -lt 1000) {
+            throw "Downloaded file is suspiciously small ($size bytes)."
+        }
+
+        Write-Host "[BOOTSTRAP] Saved -> $ScriptPath" -ForegroundColor Green
+
+        # ---- ELEVATION CHECK ------------------------------------------------
+        $IsAdmin = (
+            [Security.Principal.WindowsPrincipal]
+            [Security.Principal.WindowsIdentity]::GetCurrent()
+        ).IsInRole(
+            [Security.Principal.WindowsBuiltInRole]::Administrator
+        )
+
+        # ---- RELAUNCH -------------------------------------------------------
+        $args = @(
+            '-NoProfile'
+            '-ExecutionPolicy', 'Bypass'
+            '-File', "`"$ScriptPath`""
+        )
+
+        if ($IsAdmin) {
+
+            Write-Host "[BOOTSTRAP] Launching..." -ForegroundColor Cyan
+
+            Start-Process powershell.exe `
+                -ArgumentList $args
+
+        }
+        else {
+
+            Write-Host "[BOOTSTRAP] Requesting administrator privileges..." -ForegroundColor Yellow
+
+            Start-Process powershell.exe `
+                -ArgumentList $args `
+                -Verb RunAs
+        }
+
+    }
+    catch {
+
+        Write-Host "`n[BOOTSTRAP ERROR]" -ForegroundColor Red
+        Write-Host $_.Exception.Message -ForegroundColor Red
+
+        Write-Host "`nManual fallback:" -ForegroundColor Yellow
+        Write-Host "  irm https://dipendu.me/disable-keyboard.ps1 -OutFile disable-keyboard.ps1"
+        Write-Host "  powershell -ExecutionPolicy Bypass -File .\disable-keyboard.ps1"
+
+        Pause
     }
 
-    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
-               ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    if ($isAdmin) {
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tmp
-    } else {
-        Start-Process powershell.exe `
-            -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$tmp`"" `
-            -Verb RunAs
-    }
-    return   # exit the iex session cleanly
+    return
 }
-
 # -- STAGE 1: self-elevate if not already admin ------------------------------
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
            ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
