@@ -246,8 +246,11 @@ function Restore-AllKeyboards {
         
         foreach ($instanceName in $disabled) {
             try {
-                Enable-PnpDevice -InstanceName $instanceName -Confirm:$false -ErrorAction SilentlyContinue
-                Write-Host "[RESTORE] Re-enabled: $instanceName" -ForegroundColor Green
+                $device = Get-PnpDevice | Where-Object { $_.InstanceName -eq $instanceName }
+                if ($device) {
+                    $device | Enable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue
+                    Write-Host "[RESTORE] Re-enabled: $instanceName" -ForegroundColor Green
+                }
             }
             catch { }
         }
@@ -517,7 +520,7 @@ $btnDisable.Add_Click({
             
             $disabledAny = $false
             foreach ($dev in $devices) {
-                Disable-PnpDevice -InstanceName $dev.InstanceName -Confirm:$false
+                $dev | Disable-PnpDevice -Confirm:$false
                 Save-KeyboardDisableState -DeviceName $dev.FriendlyName -InstanceName $dev.InstanceName
                 $disabledAny = $true
             }
