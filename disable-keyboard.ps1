@@ -198,6 +198,57 @@ if (-not (Test-Path $RegPathUser)) {
     New-Item -Path $RegPathUser -Force -ErrorAction SilentlyContinue | Out-Null
 }
 
+# Function to detect if keyboard is internal or external
+function Get-KeyboardType {
+    param([object]$Device)
+    
+    try {
+        # Get detailed device info from registry
+        $regPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$($Device.InstanceName)"
+        $devInfo = Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue
+        
+        # Check various indicators
+        $friendlyName = $Device.FriendlyName.ToLower()
+        $deviceDesc = if ($devInfo.DeviceDesc) { $devInfo.DeviceDesc.ToLower() } else { "" }
+        $instanceId = if ($devInfo.HardwareID) { $devInfo.HardwareID -join "," } else { "" }
+        
+        # Internal keyboard indicators
+        $internalPatterns = @(
+            "standard ps/2",
+            "ps/2",
+            "laptop",
+            "integrated",
+            "internal",
+            "built-in",
+            "acpi",
+            "ec keyboard"
+        )
+        
+        foreach ($pattern in $internalPatterns) {
+            if ($friendlyName -match $pattern -or $deviceDesc -match $pattern) {
+                return "INTERNAL"
+            }
+        }
+        
+        # External keyboard indicators (USB)
+        if ($instanceId -match "USB" -or $friendlyName -match "USB" -or $deviceDesc -match "USB") {
+            return "EXTERNAL"
+        }
+        
+        # Check parent device class
+        if ($Device.InstanceName -match "HID" -and $Device.InstanceName -notmatch "PS2") {
+            return "EXTERNAL"
+        }
+        
+        # Default: if it's not explicitly USB/HID, likely internal
+        return "INTERNAL"
+    }
+    catch {
+        # Default to internal for safety
+        return "INTERNAL"
+    }
+}
+
 # Store device state in registry for persistence across reboots
 function Save-KeyboardDisableState {
     param(
@@ -244,35 +295,54 @@ function Restore-AllKeyboards {
     try {
         $disabled = Get-DisabledKeyboards
         
+        if ($disabled.Count -eq 0) {
+            Write-Host "[RESTORE] No disabled keyboards found in registry" -ForegroundColor Yellow
+        }
+        
         foreach ($instanceName in $disabled) {
+            if ([string]::IsNullOrWhiteSpace($instanceName)) { continue }
+            
             try {
-                # Try via registry first (more reliable)
+                # Try via registry first (most reliable method for Windows 10 Pro and later)
                 $regPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$instanceName"
                 if (Test-Path $regPath) {
+                    # Value 3 = enabled in Windows Device Manager
                     Set-ItemProperty -Path $regPath -Name "Start" -Value 3 -ErrorAction SilentlyContinue
                     Write-Host "[RESTORE] Re-enabled via registry: $instanceName" -ForegroundColor Green
                 }
                 
-                # Also try via PnP if registry didn't work
-                $device = Get-PnpDevice | Where-Object { $_.InstanceName -eq $instanceName }
-                if ($device) {
-                    try {
+                # Also try via PnP if available
+                try {
+                    $device = Get-PnpDevice | Where-Object { $_.InstanceName -eq $instanceName } -ErrorAction SilentlyContinue
+                    if ($device) {
                         $device | Enable-PnpDevice -Confirm:$false -ErrorAction SilentlyContinue
                         Write-Host "[RESTORE] Re-enabled via PnP: $instanceName" -ForegroundColor Green
                     }
-                    catch { }
                 }
+                catch { }
             }
-            catch { }
+            catch {
+                Write-Host "[RESTORE] Error restoring $instanceName : $_" -ForegroundColor Yellow
+            }
         }
         
         # Clear registry
         Remove-Item -Path $RegPathUser -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $RegPath -Force -ErrorAction SilentlyContinue
+        Write-Host "[RESTORE] Cleared registry entries" -ForegroundColor Green
+        
+        # Remove the scheduled task that re-disables keyboards on boot
+        $taskName = "DisabledKeyboardsPersist"
+        $taskExists = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+        if ($taskExists) {
+            Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+            Write-Host "[RESTORE] Removed boot persistence task" -ForegroundColor Green
+        }
         
         return $true
     }
     catch {
+        Write-Host "[RESTORE ERROR] $_" -ForegroundColor Yellow
         return $false
     }
 }
@@ -284,22 +354,46 @@ function Install-BootPersistence {
         
         # Remove old task if exists
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 500
         
-        # Script block to run on boot
+        # Script block to run on boot - uses registry paths for both HKLM and HKCU
         $scriptBlock = @'
-$RegPath = "HKCU:\SOFTWARE\DisabledKeyboards"
-if (Test-Path $RegPath) {
-    Start-Sleep -Seconds 5
-    $disabled = Get-ItemProperty -Path $RegPath | Select-Object -ExpandProperty PSObject.Properties | Where-Object { $_.Name -notmatch '^PS' } | Select-Object -ExpandProperty Value
-    foreach ($instanceName in $disabled) {
+Start-Sleep -Seconds 5
+
+# Try both registry locations
+$regPaths = @(
+    "HKCU:\SOFTWARE\DisabledKeyboards",
+    "HKLM:\SOFTWARE\DisabledKeyboards"
+)
+
+$disabledDevices = @()
+foreach ($regPath in $regPaths) {
+    if (Test-Path $regPath) {
         try {
-            $devRegPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$instanceName"
-            if (Test-Path $devRegPath) {
-                Set-ItemProperty -Path $devRegPath -Name "Start" -Value 4 -Force -ErrorAction SilentlyContinue
+            $items = Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue
+            if ($items) {
+                foreach ($prop in $items.PSObject.Properties) {
+                    if ($prop.Name -notmatch '^PS' -and $prop.Value) {
+                        $disabledDevices += $prop.Value
+                    }
+                }
             }
         }
         catch { }
     }
+}
+
+# Remove duplicates
+$disabledDevices = $disabledDevices | Select-Object -Unique
+
+foreach ($instanceName in $disabledDevices) {
+    try {
+        $devRegPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$instanceName"
+        if (Test-Path $devRegPath) {
+            Set-ItemProperty -Path $devRegPath -Name "Start" -Value 4 -Force -ErrorAction SilentlyContinue
+        }
+    }
+    catch { }
 }
 '@
         
@@ -307,10 +401,11 @@ if (Test-Path $RegPath) {
         $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedScript"
         $trigger = New-ScheduledTaskTrigger -AtLogOn
         $principal = New-ScheduledTaskPrincipal -RunLevel Highest -UserId "SYSTEM"
+        $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RunOnlyIfNetworkAvailable:$false
         
-        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Force -ErrorAction SilentlyContinue | Out-Null
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction SilentlyContinue | Out-Null
         
-        Write-Host "[PERSISTENCE] Boot task installed" -ForegroundColor Green
+        Write-Host "[PERSISTENCE] Boot task installed on $(Get-Date)" -ForegroundColor Green
     }
     catch {
         Write-Host "[PERSISTENCE ERROR] $_" -ForegroundColor Yellow
@@ -335,11 +430,11 @@ function Show-RescueMode {
     $rescue.Controls.Add($title)
 
     $info = New-Object System.Windows.Forms.Label
-    $info.Text = "Click 'Restore All Keyboards' to re-enable all disabled keyboards.`n`nThis action requires administrator privileges."
+    $info.Text = "Click 'Restore All Keyboards' to re-enable all disabled internal keyboards.`n`nThis will remove the keyboard disable settings from your system.`n`nExternal keyboards will not be affected.`n`nReboot required."
     $info.ForeColor = 'White'
     $info.AutoSize = $true
     $info.Location = New-Object System.Drawing.Point(20,70)
-    $info.Size = New-Object System.Drawing.Size(450,80)
+    $info.Size = New-Object System.Drawing.Size(450,100)
     $rescue.Controls.Add($info)
 
     $btnRestore = New-Object System.Windows.Forms.Button
@@ -469,14 +564,24 @@ function Load-Keyboards {
     try {
 
         $devices = Get-PnpDevice -Class Keyboard -ErrorAction Stop
+        $internalCount = 0
+        $externalCount = 0
 
         foreach ($dev in $devices) {
+            $keyboardType = Get-KeyboardType -Device $dev
+            $typeLabel = if ($keyboardType -eq "INTERNAL") { "[INT]" } else { "[EXT]" }
+            
+            if ($keyboardType -eq "INTERNAL") {
+                $internalCount++
+            } else {
+                $externalCount++
+            }
 
-            $line = "$($dev.FriendlyName)  |  $($dev.Status)"
+            $line = "$typeLabel $($dev.FriendlyName) | $($dev.Status)"
             $list.Items.Add($line)
         }
 
-        $status.Text = "Found $($devices.Count) keyboard device(s)."
+        $status.Text = "Found $internalCount internal, $externalCount external keyboard(s). Total: $($devices.Count)"
     }
     catch {
 
@@ -515,6 +620,17 @@ $btnDisable.Add_Click({
     }
 
     $selectedDevice = $list.SelectedItem
+    
+    # Check if external keyboard
+    if ($selectedDevice -match "\[EXT\]") {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Cannot disable external keyboards.`n`nOnly internal keyboards can be disabled.",
+            "Action Not Allowed",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        )
+        return
+    }
 
     if ($selectedDevice -match 'Disabled') {
         [System.Windows.Forms.MessageBox]::Show("This keyboard is already disabled.")
@@ -522,7 +638,7 @@ $btnDisable.Add_Click({
     }
 
     $confirmResult = [System.Windows.Forms.MessageBox]::Show(
-        "Disable this keyboard?`n`nYou can restore it via the rescue mode if needed.",
+        "Disable this internal keyboard?`n`nExternal USB keyboards will remain functional.`n`nYou can restore it via Rescue Mode if needed.",
         "Confirm",
         [System.Windows.Forms.MessageBoxButtons]::YesNo,
         [System.Windows.Forms.MessageBoxIcon]::Question
@@ -530,16 +646,31 @@ $btnDisable.Add_Click({
 
     if ($confirmResult -eq 'Yes') {
         try {
-            $devices = Get-PnpDevice -Class Keyboard | Where-Object { $_.FriendlyName -match $selectedDevice.Split('|')[0].Trim() }
+            # Extract keyboard name (remove [INT] tag and status)
+            $keyboardName = $selectedDevice -replace "\[INT\]\s*", "" -replace "\s*\|.*", ""
+            
+            $devices = Get-PnpDevice -Class Keyboard | Where-Object { $_.FriendlyName -eq $keyboardName }
+            
+            if ($devices.Count -eq 0) {
+                [System.Windows.Forms.MessageBox]::Show("Keyboard not found.", "Error")
+                return
+            }
             
             $disabledAny = $false
             foreach ($dev in $devices) {
+                # Verify it's actually internal before disabling
+                if ((Get-KeyboardType -Device $dev) -ne "INTERNAL") {
+                    Write-Host "[SECURITY] Attempted to disable external keyboard: $($dev.FriendlyName)" -ForegroundColor Yellow
+                    continue
+                }
+                
                 $disabled = $false
                 
-                # Try disabling via registry (most reliable method)
+                # Try disabling via registry (most reliable for Windows 10 Pro and later)
                 $regPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$($dev.InstanceName)"
                 if (Test-Path $regPath) {
                     try {
+                        # Value 4 = disabled in Windows Device Manager
                         Set-ItemProperty -Path $regPath -Name "Start" -Value 4 -Force -ErrorAction Stop
                         Write-Host "[DISABLE] Device disabled via registry: $($dev.FriendlyName)" -ForegroundColor Green
                         $disabled = $true
@@ -571,8 +702,14 @@ $btnDisable.Add_Click({
                 Install-BootPersistence
                 
                 [System.Windows.Forms.MessageBox]::Show(
-                    "Keyboard disabled successfully and saved.`n`nReboot to ensure complete persistence.",
+                    "Internal keyboard disabled successfully.`n`nChanges will persist after reboot.`n`nExternal keyboards remain enabled.",
                     "Success"
+                )
+            }
+            else {
+                [System.Windows.Forms.MessageBox]::Show(
+                    "Failed to disable keyboard.",
+                    "Error"
                 )
             }
 
@@ -580,7 +717,7 @@ $btnDisable.Add_Click({
         }
         catch {
             [System.Windows.Forms.MessageBox]::Show(
-                "Failed to disable keyboard: $_",
+                "Error: $_",
                 "Error",
                 [System.Windows.Forms.MessageBoxButtons]::OK,
                 [System.Windows.Forms.MessageBoxIcon]::Error

@@ -8,3 +8,5 @@ changelog.txt
 *.md
 QUICKSTART.ps1
 TEST-disable-keyboard.ps1
+COMPREHENSIVE-TEST.ps1
+QUICK-VERIFY.ps1
