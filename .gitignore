@@ -5,3 +5,6 @@ changelog.txt
 *.tmp
 .cache/
 .vscode/
+*.md
+QUICKSTART.ps1
+TEST-disable-keyboard.ps1
