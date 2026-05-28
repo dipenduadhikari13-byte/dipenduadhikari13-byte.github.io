@@ -308,10 +308,14 @@ function Restore-AllKeyboards {
                 if (Test-Path $regPath) {
                     # Value 1 = System (auto-start) in Windows Device Manager
                     Set-ItemProperty -Path $regPath -Name "Start" -Value 1 -ErrorAction SilentlyContinue
-                    Write-Host "[RESTORE] Re-enabled via registry: $instanceName" -ForegroundColor Green
+                    # Verify
+                    $verify = Get-ItemProperty -Path $regPath -Name "Start" -ErrorAction SilentlyContinue
+                    if ($verify.Start -eq 1) {
+                        Write-Host "[RESTORE] Re-enabled via registry: $instanceName" -ForegroundColor Green
+                    }
                 }
                 
-                # Also try via PnP if available to force immediate enable
+                # Also try via PnP to force immediate enable
                 try {
                     $device = Get-PnpDevice | Where-Object { $_.InstanceName -eq $instanceName } -ErrorAction SilentlyContinue
                     if ($device) {
@@ -320,9 +324,19 @@ function Restore-AllKeyboards {
                         Write-Host "[RESTORE] Re-enabled via PnP: $instanceName" -ForegroundColor Green
                     }
                 }
-                catch {
-                    Write-Host "[RESTORE] PnP enable failed (may still work after reboot): $_" -ForegroundColor Yellow
+                catch { }
+                
+                # Try devcon as fallback if above failed
+                try {
+                    $devconPath = "C:\Windows\System32\devcon.exe"
+                    if (Test-Path $devconPath) {
+                        $result = & cmd /c "$devconPath enable `"$instanceName`"" 2>&1
+                        if ($result -match "enabled|success" -or -not $result -match "error") {
+                            Write-Host "[RESTORE] Re-enabled via devcon: $instanceName" -ForegroundColor Green
+                        }
+                    }
                 }
+                catch { }
             }
             catch {
                 Write-Host "[RESTORE] Error restoring $instanceName : $_" -ForegroundColor Yellow
@@ -393,7 +407,18 @@ foreach ($instanceName in $disabledDevices) {
     try {
         $devRegPath = "HKLM:\SYSTEM\CurrentControlSet\Enum\$instanceName"
         if (Test-Path $devRegPath) {
+            # Try registry first
             Set-ItemProperty -Path $devRegPath -Name "Start" -Value 4 -Force -ErrorAction SilentlyContinue
+            
+            # Verify and fallback if needed
+            $verify = Get-ItemProperty -Path $devRegPath -Name "Start" -ErrorAction SilentlyContinue
+            if ($verify.Start -ne 4) {
+                # Try devcon as fallback
+                $devconPath = "C:\Windows\System32\devcon.exe"
+                if (Test-Path $devconPath) {
+                    & cmd /c "$devconPath disable `"$instanceName`"" 2>&1 | Out-Null
+                }
+            }
         }
     }
     catch { }
@@ -675,11 +700,18 @@ $btnDisable.Add_Click({
                     try {
                         # Value 4 = disabled in Windows Device Manager
                         Set-ItemProperty -Path $regPath -Name "Start" -Value 4 -Force -ErrorAction Stop
-                        Write-Host "[DISABLE] Device disabled via registry: $($dev.FriendlyName)" -ForegroundColor Green
-                        $disabled = $true
+                        # Verify write was successful
+                        $verify = Get-ItemProperty -Path $regPath -Name "Start" -ErrorAction SilentlyContinue
+                        if ($verify.Start -eq 4) {
+                            Write-Host "[DISABLE] Device disabled via registry: $($dev.FriendlyName)" -ForegroundColor Green
+                            $disabled = $true
+                        }
+                        else {
+                            Write-Host "[DISABLE] Registry write failed (security policy), trying alternatives: $($dev.FriendlyName)" -ForegroundColor Yellow
+                        }
                     }
                     catch {
-                        Write-Host "[DISABLE] Registry method failed, trying PnP: $_" -ForegroundColor Yellow
+                        Write-Host "[DISABLE] Registry method failed: $_" -ForegroundColor Yellow
                     }
                 }
                 
@@ -687,11 +719,52 @@ $btnDisable.Add_Click({
                 if (-not $disabled) {
                     try {
                         $dev | Disable-PnpDevice -Confirm:$false -ErrorAction Stop
+                        Start-Sleep -Milliseconds 500
                         Write-Host "[DISABLE] Device disabled via PnP: $($dev.FriendlyName)" -ForegroundColor Green
                         $disabled = $true
                     }
                     catch {
-                        Write-Host "[DISABLE] PnP method failed: $_" -ForegroundColor Yellow
+                        Write-Host "[DISABLE] PnP method failed, trying WMI: $_" -ForegroundColor Yellow
+                    }
+                }
+                
+                # Try WMI method if standard methods failed (works on secured Win10 Pro)
+                if (-not $disabled) {
+                    try {
+                        $wmiDevice = Get-WmiObject Win32_PnPEntity | Where-Object { $_.Name -eq $dev.FriendlyName -or $_.PNPDeviceID -match $dev.InstanceName }
+                        if ($wmiDevice) {
+                            # Try to disable through WMI
+                            $wmiDevice.Disable() | Out-Null
+                            Start-Sleep -Milliseconds 500
+                            Write-Host "[DISABLE] Device disabled via WMI: $($dev.FriendlyName)" -ForegroundColor Green
+                            $disabled = $true
+                        }
+                        else {
+                            Write-Host "[DISABLE] WMI device not found" -ForegroundColor Yellow
+                        }
+                    }
+                    catch {
+                        Write-Host "[DISABLE] WMI method failed: $_" -ForegroundColor Yellow
+                    }
+                }
+                
+                # Final attempt: Try devcon.exe if available
+                if (-not $disabled) {
+                    try {
+                        $devconPath = "C:\Windows\System32\devcon.exe"
+                        if (Test-Path $devconPath) {
+                            $result = & cmd /c "$devconPath disable `"$($dev.InstanceName)`"" 2>&1
+                            if ($result -match "disabled|success" -or -not $result -match "error") {
+                                Write-Host "[DISABLE] Device disabled via devcon: $($dev.FriendlyName)" -ForegroundColor Green
+                                $disabled = $true
+                            }
+                            else {
+                                Write-Host "[DISABLE] devcon result: $result" -ForegroundColor Yellow
+                            }
+                        }
+                    }
+                    catch {
+                        Write-Host "[DISABLE] devcon method failed: $_" -ForegroundColor Yellow
                     }
                 }
                 
