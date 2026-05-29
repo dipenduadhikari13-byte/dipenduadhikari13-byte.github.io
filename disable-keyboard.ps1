@@ -211,8 +211,24 @@ if (-not (Test-Path `$statePath)) {
     exit
 }
 `$ids = @((Get-Content `$statePath -Raw | ConvertFrom-Json))
+`$failedIds = @()
 foreach (`$id in `$ids) {
-    try { Enable-PnpDevice -InstanceId `$id -Confirm:`$false -ErrorAction Stop | Out-Null } catch { & pnputil.exe /enable-device "`$id" | Out-Null }
+    try {
+        Enable-PnpDevice -InstanceId `$id -Confirm:`$false -ErrorAction Stop | Out-Null
+    }
+    catch {
+        & pnputil.exe /enable-device "`$id" | Out-Null
+        if (`$LASTEXITCODE -ne 0) {
+            `$failedIds += "`$id"
+        }
+    }
+}
+if (`$failedIds.Count -gt 0) {
+    [System.Windows.Forms.MessageBox]::Show(
+        "Failed to restore the following keyboard device(s):`r`n`r`n" + (`$failedIds -join "`r`n"),
+        "Restore Keyboards"
+    )
+    exit 1
 }
 [System.Windows.Forms.MessageBox]::Show("Restore command completed. Reboot if a keyboard is still disabled.", "Restore Keyboards")
 "@
