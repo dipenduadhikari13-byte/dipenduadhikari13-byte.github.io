@@ -1,30 +1,3 @@
-#Requires -Version 5.1
-
-<#
-    .SYNOPSIS
-    Internal Keyboard Disabler - Production Ready
-    
-    .DESCRIPTION
-    Safely disables the internal/built-in keyboard while preserving:
-    - External USB keyboards
-    - Power button functionality
-    - Other daughter boards
-    
-    .FEATURES
-    - Settings persist across reboots and Windows updates
-    - GUI-based rescue mode (mouse/trackpad only)
-    - Targeted disabling (internal keyboard only)
-    - Registry-based persistence
-    - Full error handling and logging
-    - Safe elevation and bootstrap
-    
-    .DEPLOYMENT
-    irm https://dipendu.me/disable-keyboard.ps1 | iex
-    
-    .VERSION
-    2.0 - Production Ready
-#>
-
 # -----------------------------------------------------------------------------
 # STAGE 0 -- SAFETY + ENVIRONMENT CHECK
 # -----------------------------------------------------------------------------
