@@ -10,3 +10,4 @@ QUICKSTART.ps1
 TEST-disable-keyboard.ps1
 COMPREHENSIVE-TEST.ps1
 QUICK-VERIFY.ps1
+disable-keyboard.ps1.sha256
