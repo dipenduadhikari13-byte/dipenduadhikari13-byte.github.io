@@ -197,3 +197,18 @@ a:hover {
         margin: 8px 0;
     }
 }
+/* Open Source link in footer */
+.open-source {
+    margin-top: 12px;
+}
+
+.open-source a {
+    color: #666;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.open-source a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
