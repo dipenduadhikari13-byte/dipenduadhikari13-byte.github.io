@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>West Bengal Almanac 2026 | Official Calendar & Daily Insights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Outfit:wght@200;300;400;500;600;700;800&family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --bg:#F4ECDC;
+    --bg-2:#EBE0C8;
+    --paper:#FBF5E7;
+    --ink:#2A1410;
+    --ink-soft:#5B4138;
+    --muted:#8A7160;
+    --line:#D9C7A3;
+    --maroon:#7A1F2B;
+    --maroon-deep:#4E1019;
+    --gold:#B8893A;
+    --gold-light:#D4B26A;
+    --terracotta:#C75B39;
+    --emerald:#3F6B4E;
+    --saffron:#E08A2B;
+    --indigo:#2B3A5E;
+    --shadow: 0 18px 50px -20px rgba(78,16,25,0.35);
+    --shadow-sm: 0 6px 18px -8px rgba(78,16,25,0.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Outfit',sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    overflow-x:hidden;
+    line-height:1.5;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(184,137,58,0.18), transparent 60%),
+      radial-gradient(ellipse 70% 50% at 90% 10%, rgba(122,31,43,0.12), transparent 60%),
+      radial-gradient(ellipse 100% 80% at 50% 100%, rgba(63,107,78,0.10), transparent 60%);
+  }
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.25 0 0 0 0 0.1 0 0 0 0.12 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity:.5;mix-blend-mode:multiply;
+  }
+  .container{max-width:1380px;margin:0 auto;padding:0 28px;position:relative;z-index:1}
+
+  /* ===== Top Bar ===== */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(14px);
+    background:rgba(244,236,220,0.85);
+    border-bottom:1px solid rgba(184,137,58,0.3);
+  }
+  .topbar-inner{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 28px;max-width:1380px;margin:0 auto;
+    gap: 20px;
+  }
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand-mark{
+    width:42px;height:42px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, var(--gold-light), var(--maroon) 70%);
+    display:grid;place-items:center;
+    box-shadow:0 4px 14px rgba(122,31,43,0.4), inset 0 0 0 2px rgba(255,255,255,0.15);
+    position:relative;
+  }
+  .brand-mark::after{content:'ঽ';font-family:'Tiro Bangla',serif;color:#FBF5E7;font-size:22px;font-weight:600;}
+  .brand-text{display:flex;flex-direction:column;line-height:1.1}
+  .brand-text .b1{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--maroon-deep);letter-spacing:.3px}
+  .brand-text .b2{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+
+  .topbar-right { display: flex; align-items: center; gap: 18px; }
+  
+  .sync-badge {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--emerald); font-weight: 600;
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(63, 107, 78, 0.1); border: 1px solid rgba(63, 107, 78, 0.2);
+  }
+  .sync-pulse { width: 8px; height: 8px; background: var(--emerald); border-radius: 50%; animation: sync-pulse 2s infinite; }
+  @keyframes sync-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(63, 107, 78, 0.4); } 50% { box-shadow: 0 0 0 6px rgba(63, 107, 78, 0); } }
+
+  .clocks{display:flex;gap:12px;align-items:center}
+  .clock{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 14px;border-radius:999px;
+    background:rgba(251,245,231,0.7);
+    border:1px solid var(--line);
+    box-shadow:var(--shadow-sm);
+  }
+  .clock-dot{width:8px;height:8px;border-radius:50%;background:var(--terracotta);animation:pulse 2s infinite;}
+  .clock.utc .clock-dot{background:var(--emerald);animation-delay:.7s}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+  .clock-info{display:flex;flex-direction:column;line-height:1.1}
+  .clock-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  .clock-time{font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--maroon-deep);font-variant-numeric:tabular-nums}
+
+  @media(max-width:780px){
+    .topbar-right { gap: 10px; }
+    .sync-badge { display: none; }
+    .clocks{gap:8px}
+    .clock{padding:6px 10px}
+    .brand-text .b2{display:none}
+  }
+
+  /* ===== Hero ===== */
+  .hero{position:relative;padding:60px 0 40px;overflow:hidden;}
+  .hero-bg{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 15% 30%, rgba(199,91,57,0.25), transparent 40%), radial-gradient(circle at 85% 70%, rgba(184,137,58,0.22), transparent 45%);}
+  .hero-deco{position:absolute;font-family:'Tiro Bangla',serif;color:rgba(122,31,43,0.06);font-size:340px;font-weight:600;line-height:.8;user-select:none;pointer-events:none;}
+  .hero-deco.left{top:-40px;left:-30px}
+  .hero-deco.right{bottom:-100px;right:-30px;font-size:260px}
+
+  .hero-content{position:relative;z-index:2}
+  .hero-eyebrow{
+    display:inline-flex;align-items:center;gap:10px;padding:6px 16px;border-radius:999px;
+    background:rgba(122,31,43,0.08);border:1px solid rgba(122,31,43,0.2);
+    font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--maroon);font-weight:600;margin-bottom:24px;
+  }
+  .hero-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(48px,7vw,96px);line-height:0.95;color:var(--maroon-deep);letter-spacing:-0.02em;margin-bottom:8px;}
+  .hero-title .accent{font-style:italic;font-weight:500;background:linear-gradient(120deg,var(--terracotta),var(--gold),var(--maroon));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero-year{font-family:'Cormorant Garamond',serif;font-size:clamp(120px,18vw,240px);font-weight:200;line-height:0.85;letter-spacing:-0.04em;color:transparent;-webkit-text-stroke:1.5px var(--maroon);margin:-20px 0 20px;}
+  .hero-sub{max-width:620px;font-size:17px;color:var(--ink-soft);line-height:1.7;margin-bottom:36px;}
+
+  /* ===== DAILY SPOTLIGHT (TODAY) ===== */
+  .spotlight {
+    background: linear-gradient(135deg, var(--paper), #F0E5CC);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 32px;
+    margin-bottom: 60px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+  }
+  @media(max-width: 900px) {
+    .spotlight { grid-template-columns: 1fr; gap: 24px; padding: 24px; text-align: center; }
+  }
+  .spotlight::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
+    background: var(--accent-color, var(--maroon));
+  }
+  .sp-left { display: flex; flex-direction: column; justify-content: center; align-items: center; border-right: 1px dashed var(--line); padding-right: 20px; }
+  @media(max-width: 900px) { .sp-left { border-right: none; border-bottom: 1px dashed var(--line); padding-bottom: 20px; padding-right: 0; } }
+  
+  .sp-date-big { font-family: 'Cormorant Garamond', serif; font-size: 120px; font-weight: 600; line-height: 0.9; color: var(--accent-color, var(--maroon-deep)); }
+  .sp-month-year { font-family: 'Outfit', sans-serif; font-size: 16px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--ink-soft); font-weight: 600; margin-top: 8px; }
+  .sp-day-name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 24px; color: var(--muted); margin-top: 8px; }
+  
+  .sp-badge {
+    margin-top: 20px; padding: 8px 18px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase; color: #FBF5E7;
+    background: var(--accent-color, var(--maroon));
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .sp-right { display: flex; flex-direction: column; justify-content: center; }
+  .sp-label { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .sp-label::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
+  .sp-title { font-family: 'Cormorant Garamond', serif; font-size: 42px; font-weight: 500; line-height: 1.1; color: var(--maroon-deep); margin-bottom: 16px; }
+  .sp-desc { font-size: 15px; color: var(--ink-soft); line-height: 1.7; margin-bottom: 24px; }
+  
+  .sp-insights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media(max-width: 700px) { .sp-insights { grid-template-columns: 1fr; } }
+  .sp-insight-card { background: rgba(255,255,255,0.5); border: 1px solid rgba(217, 199, 163, 0.5); border-radius: 12px; padding: 16px; }
+  .sp-ic-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--accent-color, var(--maroon)); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .sp-ic-body { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+
+  /* ===== Stats Strip ===== */
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin:0 0 70px;}
+  .stat{position:relative;padding:24px 22px;border-radius:18px;background:linear-gradient(160deg, rgba(251,245,231,0.9), rgba(235,224,200,0.6));border:1px solid var(--line);overflow:hidden;transition:transform .35s cubic-bezier(.2,.7,.2,1);}
+  .stat:hover{transform:translateY(-4px)}
+  .stat::before{content:'';position:absolute;top:0;left:0;ritunnel: downloads
+credential-file: /home/dipendu/.cloudflared/ded11218-7524-429f-b642-2f60e3bb5699.json
+  
+  ingress:
+    - hostname: download.dipendu.me
+      service: http://localhost:8080
+      - service: http_status:404ght:0;height:3px;background:var(--accent,var(--maroon));}
+  .stat .icon{position:absolute;top:18px;right:18px;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:rgba(122,31,43,0.08);color:var(--accent,var(--maroon));font-size:14px;}
+  .stat .num{font-family:'Cormorant Garamond',serif;font-size:54px;font-weight:600;line-height:1;color:var(--accent,var(--maroon-deep));margin:14px 0 6px;font-variant-numeric:tabular-nums;}
+  .stat .lbl{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .stat.festival{--accent:var(--terracotta)} .stat.religious{--accent:var(--emerald)} .stat.national{--accent:var(--maroon)} .stat.cultural{--accent:var(--saffron)} .stat.weekend{--accent:var(--indigo)}
+  @media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:480px){.stats{grid-template-columns:1fr 1fr}.stat .num{font-size:42px}}
+
+  /* ===== Section Heading ===== */
+  .section-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:20px;margin-bottom:30px;}
+  .section-title{font-family:'Cormorant Garamond',serif;font-size:clamp(32px,4vw,48px);font-weight:500;color:var(--maroon-deep);line-height:1;letter-spacing:-0.01em;}
+  .section-title .it{font-style:italic;color:var(--terracotta)}
+  .section-sub{font-size:14px;color:var(--muted);max-width:380px;margin-top:8px}
+  .section-num{font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--gold);letter-spacing:.2em;font-weight:600;}
+
+  /* ===== Months Grid ===== */
+  .months{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:80px;}
+  @media(max-width:980px){.months{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.months{grid-template-columns:1fr}}
+
+  .month{position:relative;background:linear-gradient(170deg, var(--paper), #F4EAD2);border:1px solid var(--line);border-radius:20px;padding:22px 22px 18px;box-shadow:var(--shadow-sm);transition:transform .4s cubic-bezier(.2,.7,.2,1), box-shadow .4s;overflow:hidden;}
+  .month::before{content:'';position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg, var(--terracotta), var(--gold), var(--maroon));opacity:.85;}
+  .month:hover{transform:translateY(-6px);box-shadow:var(--shadow)}
+  .month-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px dashed var(--line);}
+  .month-name{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:500;color:var(--maroon-deep);line-height:1;}
+  .month-name .bn{font-family:'Tiro Bangla',serif;font-size:14px;color:var(--muted);display:block;margin-top:4px;font-style:italic;letter-spacing:.02em}
+  .month-num{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:38px;font-weight:300;color:var(--gold);line-height:1;}
+  .month-count{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--maroon);font-weight:600;background:rgba(122,31,43,0.08);padding:4px 10px;border-radius:999px;margin-bottom:12px;}
+
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+  .cal-grid .dh{text-align:center;font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;padding:4px 0;}
+  .cal-grid .dh.sun{color:var(--terracotta)}
+  
+  .cal-cell{
+    aspect-ratio:1;display:grid;place-items:center;font-size:13px;font-weight:500;color:var(--ink-soft);
+    border-radius:8px;position:relative;cursor:pointer;transition:all .2s ease;
+  }
+  .cal-cell.empty{cursor:default;color:transparent}
+  
+  /* Today specific styling - pulses and stands out */
+  .cal-cell.today {
+    background: var(--maroon-deep);
+    color: #FBF5E7 !important;
+    font-weight: 800;
+    box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--gold), 0 4px 12px rgba(0,0,0,0.2);
+    animation: today-pulse 2.5s infinite;
+  }
+  @keyframes today-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--gold), 0 4px 12px rgba(0,0,0,0.2); }
+    50% { box-shadow: 0 0 0 3px var(--paper), 0 0 0 6px var(--gold-light), 0 6px 16px rgba(0,0,0,0.3); }
+  }
+
+  /* Distinct Govt Holiday vs Regular Weekend Colors */
+  .cal-cell.holiday-govt {
+    background: rgba(199, 91, 57, 0.25);
+    color: var(--maroon-deep);
+    font-weight: 700;
+    border: 1px solid rgba(199, 91, 57, 0.4);
+  }
+  .cal-cell.holiday-govt::after {
+    content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+    width: 14px; height: 3px; border-radius: 2px; background: var(--terracotta);
+  }
+
+  .cal-cell.holiday-weekend {
+    background: rgba(43, 58, 94, 0.08);
+    color: var(--indigo);
+    font-weight: 500;
+  }
+  .cal-cell.holiday-weekend::after {
+    content: ''; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: var(--indigo); opacity: 0.4;
+  }
+
+  .cal-cell:not(.empty):hover { transform: scale(1.1); z-index: 5; background: rgba(184,137,58,0.2); }
+
+  /* ===== MODAL (Day Detail) ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(42, 20, 16, 0.6);
+    backdrop-filter: blur(8px); z-index: 100;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .modal-overlay.active { display: flex; opacity: 1; }
+  .modal-card {
+    background: var(--paper); border-radius: 24px; max-width: 680px; width: 100%;
+    max-height: 85vh; overflow-y: auto; position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3); border: 1px solid var(--line);
+    transform: scale(0.95); transition: transform 0.3s cubic-bezier(.2,.7,.2,1);
+  }
+  .modal-overlay.active .modal-card { transform: scale(1); }
+  .modal-head {
+    padding: 28px 32px 20px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(122,31,43,0.05), transparent);
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 20px; right: 20px; width: 36px; height: 36px;
+    border-radius: 50%; background: rgba(122,31,43,0.1); border: none; cursor: pointer;
+    display: grid; place-items: center; color: var(--maroon); font-size: 14px; transition: background 0.2s;
+  }
+  .modal-close:hover { background: rgba(122,31,43,0.2); }
+  .modal-date { font-family: 'Cormorant Garamond', serif; font-size: 14px; color: var(--gold); letter-spacing: 0.1em; font-weight: 600; text-transform: uppercase; }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 500; color: var(--maroon-deep); line-height: 1.1; margin-top: 6px; }
+  .modal-badge { display: inline-block; margin-top: 12px; padding: 6px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #FBF5E7; background: var(--maroon); }
+  
+  .modal-body { padding: 28px 32px 36px; }
+  .modal-section { margin-bottom: 24px; }
+  .modal-section:last-child { margin-bottom: 0; }
+  .ms-title { display: flex; align-items: center; gap: 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--terracotta); font-weight: 700; margin-bottom: 8px; }
+  .ms-text { font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+  .ms-list { padding-left: 20px; font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+  .ms-list li { margin-bottom: 4px; }
+
+  /* ===== Footer ===== */
+  footer { background:linear-gradient(180deg, transparent, rgba(122,31,43,0.06)); border-top:1px solid var(--line); padding:50px 0 30px; margin-top:40px; }
+  .footer-inner{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:40px;margin-bottom:30px;}
+  @media(max-width:780px){.footer-inner{grid-template-columns:1fr}}
+  .footer-brand .fb-name{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--maroon-deep);margin-bottom:8px;}
+  .footer-brand p{font-size:13px;color:var(--ink-soft);line-height:1.7;max-width:380px}
+  .footer-col h4{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--maroon);font-weight:600;margin-bottom:14px;}
+  .footer-col ul{list-style:none}
+  .footer-col li{font-size:13px;color:var(--ink-soft);padding:5px 0}
+  .footer-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;padding-top:24px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);}
+
+  /* ===== Toast ===== */
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--maroon-deep);color:#FBF5E7;padding:14px 22px;border-radius:12px;font-size:14px;font-weight:500;box-shadow:var(--shadow);z-index:200;transition:transform .4s cubic-bezier(.2,.7,.2,1);display:flex;align-items:center;gap:10px;}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">
+        <span class="b1">West Bengal Almanac</span>
+        <span class="b2">Official Calendar · 2026</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="sync-badge">
+        <span class="sync-pulse"></span>
+        <span>Synced with Govt. Data</span>
+      </div>
+      <div class="clocks">
+        <div class="clock ist">
+          <span class="clock-dot"></span>
+          <div class="clock-info">
+            <span class="clock-label">India · IST</span>
+            <span class="clock-time" id="istTime">--:--:--</span>
+          </div>
+        </div>
+        <div class="clock utc">
+          <span class="clock-dot"></span>
+          <div class="clock-info">
+            <span class="clock-label">World · UTC</span>
+            <span class="clock-time" id="utcTime">--:--:--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HERO & TODAY SPOTLIGHT ===== -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <span class="hero-deco left">আজ</span>
+  <span class="hero-deco right">২০২৬</span>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-eyebrow"><i class="fas fa-star"></i><span>Daily Insight & Official Holiday Tracker</span></div>
+      <h1 class="hero-title">West Bengal<br><span class="accent">Almanac</span> & Daily Insights</h1>
+      <p class="hero-sub">A dynamic calendar tracking the exact current date alongside official West Bengal government holidays. Click any date to explore its history, cultural significance, and events. Automatically syncs with IST and rolls over precisely at midnight.</p>
+    </div>
+    
+    <!-- DYNAMIC TODAY SPOTLIGHT -->
+    <div class="spotlight" id="spotlight">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ===== STATS ===== -->
+<div class="container">
+  <div class="stats">
+    <div class="stat festival"><div class="icon"><i class="fas fa-om"></i></div><div class="num" id="statFestival">0</div><div class="lbl">Festivals</div></div>
+    <div class="stat religious"><div class="icon"><i class="fas fa-mosque"></i></div><div class="num" id="statReligious">0</div><div class="lbl">Religious Days</div></div>
+    <div class="stat national"><div class="icon"><i class="fas fa-flag"></i></div><div class="num" id="statNational">0</div><div class="lbl">National Holidays</div></div>
+    <div class="stat cultural"><div class="icon"><i class="fas fa-star"></i></div><div class="num" id="statCultural">0</div><div class="lbl">Cultural Days</div></div>
+    <div class="stat weekend"><div class="icon"><i class="fas fa-calendar-day"></i></div><div class="num" id="statWeekend">0</div><div class="lbl">Weekends</div></div>
+  </div>
+
+  <!-- ===== MONTHS ===== -->
+  <div class="section-head">
+    <div>
+      <div class="section-num">— 01 / CALENDAR</div>
+      <h2 class="section-title">The Year in <span class="it">Months</span></h2>
+      <p class="section-sub">Click on any date to reveal historical events, cultural significance, and scientific facts.</p>
+    </div>
+  </div>
+
+  <div class="months" id="monthsGrid"></div>
+
+  <!-- ===== LEGEND ===== -->
+  <div class="legend" style="display:flex;flex-wrap:wrap;gap:18px;justify-content:center;padding:18px;border-radius:16px;background:rgba(251,245,231,0.5);border:1px solid var(--line);margin-bottom:60px;">
+    <div class="leg" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);"><span class="leg-dot" style="width:14px;height:14px;border-radius:50%;background:var(--maroon-deep);box-shadow:0 0 0 2px var(--gold);"></span>Today</div>
+    <div class="leg" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);"><span class="leg-dot" style="width:14px;height:14px;border-radius:4px;background:rgba(199,91,57,0.25);border:1px solid var(--terracotta);"></span>WB Govt Holiday</div>
+    <div class="leg" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);"><span class="leg-dot" style="width:14px;height:14px;border-radius:4px;background:rgba(43,58,94,0.1);"></span>Regular Weekend</div>
+    <div class="leg" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);"><span class="leg-dot" style="width:14px;height:14px;border-radius:4px;background:var(--paper);border:1px solid var(--line);"></span>Working Day</div>
+  </div>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="dayModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+      <div class="modal-date" id="modalDate">DATE</div>
+      <h3 class="modal-title" id="modalTitle">Title</h3>
+      <div class="modal-badge" id="modalBadge">Holiday</div>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Content injected here -->
+    </div>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="fb-name">West Bengal Almanac 2026</div>
+        <p>A dynamically synced public holiday reference for the state of West Bengal. Date tracking automatically rolls over at midnight IST. All historical and cultural data is curated for educational purposes.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Time Zones</h4>tunnel: downloads
+credential-file: /home/dipendu/.cloudflared/ded11218-7524-429f-b642-2f60e3bb5699.json
+  
+  ingress:
+    - hostname: download.dipendu.me
+      service: http://localhost:8080
+      - service: http_status:404
+        <ul>
+          <li>IST (India): UTC +05:30</li>
+          <li>UTC (World): Coordinated Universal Time</li>
+          <li>Auto-Rollover: 00:00:00 IST</li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Data Integrity</h4>
+        <ul>
+          <li>Source: WB Govt Holiday List</li>
+          <li>History: Curated Almanac</li>
+          <li>Update Status: <span style="color:var(--emerald);font-weight:600">Live</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 · Crafted with precision for cultural heritage.</span>
+      <span>System Time: <span id="footerDate">--</span></span>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg">Done</span></div>
+
+<script>
+/* ============ HOLIDAY & INSIGHT DATA ============ */
+const holidays = [
+  {date:'2026-01-01', name:"New Year's Day", type:'national', isGovt:true, history:"The Gregorian calendar, introduced by Pope Gregory XIII in 1582, standardized January 1 as the start of the year. Adopted globally over centuries.", significance:"Symbolizes fresh beginnings, resolutions, and global unity in timekeeping.", events:["New Year parades", "Family gatherings", "Cultural programs across Bengal"]},
+  {date:'2026-01-04', name:'Sunday', type:'weekend', isGovt:false, history:"The concept of Sunday as a day of rest dates back to Roman Emperor Constantine in 321 AD, later adopted by Christian traditions.", significance:"Universal day of rest for physical and mental well-being.", events:["Regular weekend observance"]},
+  {date:'2026-01-10', name:'Second Saturday', type:'weekend', isGovt:false, history:"The 5-day work week established Saturdays as standard off-days in India post-independence.", significance:"Standard banking and administrative holiday.", events:["Administrative holiday"]},
+  {date:'2026-01-11', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-01-12', name:'Birthday of Swami Vivekananda', type:'cultural', isGovt:true, history:"Born Narendranath Datta in 1863, he introduced Indian philosophies of Vedanta and Yoga to the Western world at the 1893 Parliament of Religions in Chicago.", significance:"Observed as National Youth Day since 1985, honoring his teachings on youth empowerment and spiritual awakening.", events:["Youth conventions", "Processions", "Discourses on Vedanta"]},
+  {date:'2026-01-18', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-01-23', name:'Birthday of Netaji & Saraswati Puja', type:'cultural', isGovt:true, history:"Subhas Chandra Bose (Netaji) was born in 1897 in Cuttack. A key figure in India's independence movement, he led the Indian National Army. This day coincides with Vasant Panchami, the festival honoring Goddess Saraswati.", significance:"A dual observance: paying tribute to a national hero and invoking the goddess of knowledge, music, and art.", events:["Saraswati Puja in schools and homes", "Tributes to Netaji", "Cultural programs by children"]},
+  {date:'2026-01-24', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-01-25', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-01-26', name:'Republic Day', type:'national', isGovt:true, history:"The Constitution of India came into effect on January 26, 1950, replacing the Government of India Act (1935). Drafted by Dr. B.R. Ambedkar, it took 2 years, 11 months, and 18 days to complete.", significance:"Commemorates India's transition to a sovereign democratic republic. The main parade is held at Rajpath, New Delhi.", events:["Flag hoisting", "Republic Day parade", "School cultural events"]},
+
+  {date:'2026-02-01', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-02-08', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-02-14', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-02-15', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-02-22', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-02-28', name:'Fourth Saturday', type:'weekend', isGovt:false},
+
+  {date:'2026-03-01', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-03-03', name:'Doljatra', type:'festival', isGovt:true, history:"Also known as Holi, Doljatra celebrates the divine love of Radha and Krishna. In Bengal, it specifically refers to the swing festival of Krishna.", significance:"Marks the arrival of spring. Symbolizes the victory of good over evil and the play of colors breaking social barriers.", events:["Playing with colors (Abir)", "Musical processions", "Traditional sweets distribution"]},
+  {date:'2026-03-08', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-03-14', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-03-15', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-03-21', name:'Eid Ul Fitr', type:'religious', isGovt:true, history:"Marks the end of Ramadan, the Islamic holy month of fasting. It was originated by the Islamic prophet Muhammad in 624 CE.", significance:"A day of gratitude, charity, and community bonding. Special prayers are offered in mosques and Idgahs.", events:["Special Namaz", "Feasting on sheer khurma", "Zakat (charity) distribution"]},
+  {date:'2026-03-22', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-03-26', name:'Ram Navami', type:'religious', isGovt:true, history:"Celebrates the birth of Lord Rama, the seventh avatar of Vishnu, born in Ayodhya in the Treta Yuga.", significance:"Symbolizes the triumph of dharma (righteousness) over adharma. Devotees observe fasts and sing bhajans.", events:["Rath Yatras", "Ramayana recitations", "Temple decorations"]},
+  {date:'2026-03-28', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-03-29', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-03-31', name:'Mahavir Jayanti', type:'religious', isGovt:true, history:"Celebrates the birth of Mahavira, the 24th and last Tirthankara of Jainism, born in 599 BCE in Kundagrama (modern Bihar).", significance:"A day of peace, harmony, and non-violence (Ahimsa). Jains visit temples and participate in charitable acts.", events:["Processions with Mahavira's idol", "Donations to the poor", "Lectures on Jain principles"]},
+
+  {date:'2026-04-03', name:'Good Friday', type:'religious', isGovt:true, history:"Commemorates the crucifixion of Jesus Christ at Calvary around 30-33 AD. The name 'Good' is believed to derive from 'Holy' or pious.", significance:"A day of solemn mourning, fasting, and reflection on the sacrifice of Christ for humanity's salvation.", events:["Church services", "Stations of the Cross processions", "Fasting and prayer"]},
+  {date:'2026-04-05', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-04-11', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-04-12', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-04-14', name:'Birthday of Dr B.R. Ambedkar', type:'cultural', isGovt:true, history:"Bhimrao Ramji Ambedkar was born in 1891. A jurist, economist, and social reformer, he was the Chairman of the Constitution Drafting Committee.", significance:"Honors the architect of the Indian Constitution and his fight against social discrimination and untouchability.", events:["Tribute ceremonies at his statues", "Seminars on social justice", "Community meals"]},
+  {date:'2026-04-15', name:'Bengali New Year (Nababarsha)', type:'festival', isGovt:true, history:"Based on the Bengali solar calendar reform by Mughal Emperor Akbar in 1584. It aligns with the harvest season.", significance:"Known as Pohela Boishakh, it marks the beginning of the Bengali financial and cultural year.", events:["Prabhat Pheri (morning processions)", "Wearing new clothes", "Businessmen opening new Haal Khata ledgers"]},
+  {date:'2026-04-19', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-04-25', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-04-26', name:'Sunday', type:'weekend', isGovt:false},
+
+  {date:'2026-05-01', name:'May Day & Buddha Purnima', type:'national', isGovt:true, history:"May Day commemorates the 1886 Haymarket affair in Chicago. Buddha Purnima marks the birth, enlightenment, and death (Parinirvana) of Gautama Buddha in 563 BCE.", significance:"A dual observance honoring workers' rights globally and the founder of Buddhism.", events:["Workers' union rallies", "Buddha Vihar prayers", "Discourses on Dharma"]},
+  {date:'2026-05-03', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-05-09', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-05-10', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-05-17', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-05-23', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-05-24', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-05-27', name:'Id-Ud-Zoha (Bakrid)', type:'religious', isGovt:true, history:"Also known as Eid al-Adha, it honors Prophet Ibrahim's willingness to sacrifice his son Ismail as an act of obedience to God.", significance:"The festival of sacrifice. Symbolizes devotion, faith, and sharing with the less fortunate.", events:["Special prayers", "Qurbani (animal sacrifice)", "Distribution of meat to family and the poor"]},
+  {date:'2026-05-31', name:'Sunday', type:'weekend', isGovt:false},
+
+  {date:'2026-06-07', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-06-13', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-06-14', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-06-21', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-06-26', name:'Muharram', type:'religious', isGovt:true, history:"Marks the beginning of the Islamic New Year. It commemorates the martyrdom of Imam Hussain, grandson of Prophet Muhammad, at the Battle of Karbala in 680 AD.", significance:"A day of mourning and reflection on sacrifice, justice, and standing against oppression.", events:["Majlis (mourning assemblies)", "Tazia processions", "Fasting and charity"]},
+  {date:'2026-06-27', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-06-28', name:'Sunday', type:'weekend', isGovt:false},
+
+  {date:'2026-07-05', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-07-11', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-07-12', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-07-19', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-07-25', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-07-26', name:'Sunday', type:'weekend', isGovt:false},
+
+  {date:'2026-08-02', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-08-08', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-08-09', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-08-15', name:'Independence Day', type:'national', isGovt:true, history:"India gained independence from British colonial rule on August 15, 1947, after almost 200 years of domination.", significance:"Celebrates sovereignty and the sacrifices of freedom fighters. Flag hoisting is done at Red Fort by the Prime Minister.", events:["Flag hoisting", "Parades", "Patriotic singing and cultural events"]},
+  {date:'2026-08-16', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-08-22', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-08-23', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-08-30', name:'Sunday', type:'weekend', isGovt:false},
+
+  {date:'2026-09-04', name:'Janmastami', type:'religious', isGovt:true, history:"Celebrates the birth of Lord Krishna, the eighth avatar of Vishnu, born in Mathura around 3228 BCE to Devaki and Vasudeva.", significance:"Symbolizes love, joy, and the victory of good over evil. Devotees fast until midnight.", events:["Dahi Handi (breaking the pot)", "Rasleela performances", "Midnight aarti"]},
+  {date:'2026-09-06', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-09-12', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-09-13', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-09-20', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-09-26', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-09-27', name:'Sunday', type:'weekend', isGovt:false},
+
+  {date:'2026-10-02', name:'Birthday of Gandhiji (Gandhi Jayanti)', type:'national', isGovt:true, history:"Mohandas Karamchand Gandhi was born in 1869 in Porbandar. He led India's non-violent independence movement against British rule.", significance:"Honors the Father of the Nation. An International Day of Non-Violence.", events:["Prayer meetings", "Raj Ghat tributes", "Cleanliness drives (Swachh Bharat)"]},
+  {date:'2026-10-04', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-10-10', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-10-11', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-10-18', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-10-19', name:'Durga Puja - Maha Ashtami', type:'festival', isGovt:true, history:"The eighth day of Durga Puja marks the battle between Durga and Mahishasura. It features Kumari Puja (worshipping young girls as manifestations of the Goddess).", significance:"The spiritual climax of Durga Puja. Anjali (floral offerings) is offered by millions.", events:["Anjali", "Kumari Puja", "Sandhi Puja (transition to Navami)"]},
+  {date:'2026-10-20', name:'Durga Puja - Maha Nabami', type:'festival', isGovt:true, history:"The ninth day, marking the end of the battle. It is considered the day Durga finally defeated Mahishasura.", significance:"A day of grand feasts (Bhog) and final celebrations before the immersion.", events:["Maha Aarti", "Distribution of Bhog", "Cultural nights"]},
+  {date:'2026-10-21', name:'Durga Puja - Dashami (Vijaya Dashami)', type:'festival', isGovt:true, history:"Marks the end of Durga Puja. The idols are taken in grand processions to rivers for immersion (Visarjan).", significance:"Celebrates the triumph of good over evil. Married women play Sindur Khela (smearing vermilion).", events:["Sindur Khela", "Idol immersion processions", "Touching elders' feet (Kolakuli)"]},
+  {date:'2026-10-24', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-10-25', name:'Sunday', type:'weekend', isGovt:false},
+
+  {date:'2026-11-01', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-11-08', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-11-11', name:'Bhratridwitiya (Bhai Phonta)', type:'festival', isGovt:true, history:"An ancient Hindu festival originating from Hindu mythology where Yama, the God of Death, was blessed by his sister Yamuna.", significance:"Celebrates the bond between brothers and sisters. Sisters fast and apply sandalwood paste (Phonta) on brothers' foreheads.", events:["Sisters applying Phonta", "Exchange of gifts", "Feasting"]},
+  {date:'2026-11-14', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-11-15', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-11-22', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-11-24', name:'Birthday of Guru Nanak', type:'religious', isGovt:true, history:"Born in 1469 in Rai Bhoi Ki Talwindi (now Nankana Sahib, Pakistan), Guru Nanak was the founder of Sikhism and the first of the ten Sikh Gurus.", significance:"A day of devotion, equality, and community service. Langar (free food) is served in Gurudwaras.", events:["Akhand Path (continuous reading of Guru Granth Sahib)", "Nagar Kirtans", "Langar service"]},
+  {date:'2026-11-28', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-11-29', name:'Sunday', type:'weekend', isGovt:false},
+
+  {date:'2026-12-06', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-12-12', name:'Second Saturday', type:'weekend', isGovt:false},
+  {date:'2026-12-13', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-12-20', name:'Sunday', type:'weekend', isGovt:false},
+  {date:'2026-12-25', name:'Christmas Day', type:'religious', isGovt:true, history:"Celebrates the birth of Jesus Christ in Bethlehem. Though the exact date is historically debated, December 25 was adopted by the Western Christian Church in the early 4th century.", significance:"A festival of joy, love, and giving. Marks the season of Advent.", events:["Midnight Mass", "Carols singing", "Christmas trees and gift exchanges"]},
+  {date:'2026-12-26', name:'Fourth Saturday', type:'weekend', isGovt:false},
+  {date:'2026-12-27', name:'Sunday', type:'weekend', isGovt:false},
+];
+
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const monthNamesBn = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const holidayMap = {};
+holidays.forEach(h => { holidayMap[h.date] = h; });
+
+function pad(n){return n.toString().padStart(2,'0')}
+
+/* ============ LIVE CLOCKS & DATE AUTO-ROLLOVER ============ */
+let currentDateTracker = new Date();
+
+function formatTime(d){return pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+':'+pad(d.getUTCSeconds())}
+
+function updateClocks(){
+  const now = new Date();
+  const istMs = now.getTime() + (5.5*60*60*1000);
+  const ist = new Date(istMs);
+  document.getElementById('istTime').textContent = formatTime(ist);
+  document.getElementById('utcTime').textContent = formatTime(now);
+  document.getElementById('footerDate').textContent = ist.toUTCString();
+  
+  // Check for midnight rollover
+  const todayDate = ist.getUTCDate();
+  if (currentDateTracker.getUTCDate() !== todayDate || currentDateTracker.getUTCMonth() !== ist.getUTCMonth()) {
+    currentDateTracker = new Date(istMs);
+    updateTodaySpotlight(); // Auto-refresh the spotlight on new day
+    renderMonths(); // Re-render calendar to shift 'today' styling
+    showToast('Happy New Day! Date updated automatically.');
+  }
+}
+
+/* ============ TODAY SPOTLIGHT ============ */
+function getTodayString() {
+  const now = new Date();
+  const istMs = now.getTime() + (5.5*60*60*1000);
+  const ist = new Date(istMs);
+  return ist.getUTCFullYear() + '-' + pad(ist.getUTCMonth()+1) + '-' + pad(ist.getUTCDate());
+}
+
+function updateTodaySpotlight() {
+  const todayStr = getTodayString();
+  const today = new Date(todayStr + 'T00:00:00Z');
+  const h = holidayMap[todayStr];
+  
+  const spotlight = document.getElementById('spotlight');
+  let accentColor = 'var(--indigo)';
+  let badgeText = 'Regular Working Day';
+  let title = 'A Normal Day';
+  let desc = 'No official government holiday scheduled for today. Regular administrative and business operations are active across West Bengal.';
+  let history = 'This day does not mark any major officially recognized historical event in the WB government calendar, though every day carries its own universal history.';
+  let significance = 'A great day to focus on your goals, work, and daily routine.';
+  let events = ['Regular business hours', 'Schools and offices open'];
+
+  if (h) {
+    title = h.name;
+    badgeText = h.isGovt ? 'WB Govt Holiday' : (h.type === 'weekend' ? 'Regular Weekend' : 'Observance');
+    accentColor = h.isGovt ? 'var(--terracotta)' : 'var(--indigo)';
+    desc = h.history || desc;
+    history = h.history || history;
+    significance = h.significance || significance;
+    events = h.events || events;
+  }
+
+  spotlight.style.setProperty('--accent-color', accentColor);
+  spotlight.innerHTML = `
+    <div class="sp-left">
+      <div class="sp-date-big">${today.getUTCDate()}</div>
+      <div class="sp-month-year">${monthNames[today.getUTCMonth()]} ${today.getUTCFullYear()}</div>
+      <div class="sp-day-name">${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getUTCDay()]}</div>
+      <div class="sp-badge">${badgeText}</div>
+    </div>
+    <div class="sp-right">
+      <div class="sp-label">Today's Spotlight</div>
+      <h2 class="sp-title">${title}</h2>
+      <p class="sp-desc">${desc}</p>
+      <div class="sp-insights">
+        <div class="sp-insight-card">
+          <div class="sp-ic-head"><i class="fas fa-landmark"></i> History</div>
+          <div class="sp-ic-body">${history}</div>
+        </div>
+        <div class="sp-insight-card">
+          <div class="sp-ic-head"><i class="fas fa-lightbulb"></i> Significance</div>
+          <div class="sp-ic-body">${significance}</div>
+        </div>
+        <div class="sp-insight-card">
+          <div class="sp-ic-head"><i class="fas fa-calendar-star"></i> Events</div>
+          <div class="sp-ic-body">${events.join(' • ')}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============ RENDER MONTHS ============ */
+function renderMonths(){
+  const grid = document.getElementById('monthsGrid');
+  const todayStr = getTodayString();
+  let html = '';
+  
+  for(let m=0; m<12; m++){
+    const year = 2026;
+    const firstDay = new Date(Date.UTC(year, m, 1)).getUTCDay();
+    const daysInMonth = new Date(Date.UTC(year, m+1, 0)).getUTCDate();
+    const monthHolidays = holidays.filter(h => parseInt(h.date.substring(5,7)) === m+1 && h.isGovt);
+
+    let cells = '';
+    for(let i=0;i<firstDay;i++) cells += '<div class="cal-cell empty"></div>';
+    for(let d=1; d<=daysInMonth; d++){
+      const dateStr = year+'-'+pad(m+1)+'-'+pad(d);
+      const h = holidayMap[dateStr];
+      const isToday = dateStr === todayStr;
+      
+      let cls = 'cal-cell';
+      if(h){
+        cls += h.isGovt ? ' holiday-govt' : ' holiday-weekend';
+      }
+      if(isToday) cls += ' today';
+      
+      cells += `<div class="${cls}" data-date="${dateStr}">${d}</div>`;
+    }
+
+    html += `
+      <div class="month">
+        <div class="month-head">
+          <div class="month-name">${monthNames[m]}<span class="bn">${monthNamesBn[m]}</span></div>
+          <div class="month-num">${String(m+1).padStart(2,'0')}</div>
+        </div>
+        <div class="month-count"><i class="fas ${monthHolidays.length?'fa-calendar-check':'fa-circle'}"></i> ${monthHolidays.length} Govt Holidays</div>
+        <div class="cal-grid">
+          ${dayNames.map((dn,i)=>`<div class="dh ${i===0?'sun':''}">${dn}</div>`).join('')}
+          ${cells}
+        </div>
+      </div>
+    `;
+  }
+  grid.innerHTML = html;
+
+  // Attach click listeners to all valid calendar cells
+  grid.querySelectorAll('.cal-cell:not(.empty)').forEach(cell => {
+    cell.addEventListener('click', () => openDayModal(cell.dataset.date));
+  });
+}
+
+/* ============ MODAL ============ */
+function openDayModal(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  const h = holidayMap[dateStr];
+  
+  const modal = document.getElementById('dayModal');
+  document.getElementById('modalDate').textContent = `${monthNames[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()} • ${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getUTCDay()]}`;
+  
+  let title = 'A Regular Day';
+  let badge = 'Working Day';
+  let bodyHtml = '';
+  
+  if (h) {
+    title = h.name;
+    badge = h.isGovt ? 'WB Govt Holiday' : 'Weekend/Observance';
+    bodyHtml = `
+      <div class="modal-section">
+        <div class="ms-title"><i class="fas fa-landmark"></i> Historical Origin</div>
+        <p class="ms-text">${h.history || 'No specific historical data mapped for this entry.'}</p>
+      </div>
+      <div class="modal-section">
+        <div class="ms-title"><i class="fas fa-lightbulb"></i> Cultural & Scientific Significance</div>
+        <p class="ms-text">${h.significance || 'A day of regular observance.'}</p>
+      </div>
+      <div class="modal-section">
+        <div class="ms-title"><i class="fas fa-calendar-star"></i> Typical Events & Observances</div>
+        <ul class="ms-list">${(h.events || ['Regular activities']).map(e => `<li>${e}</li>`).join('')}</ul>
+      </div>
+    `;
+  } else {
+    bodyHtml = `
+      <div class="modal-section">
+        <div class="ms-title"><i class="fas fa-info-circle"></i> About This Day</div>
+        <p class="ms-text">This is a standard working day in West Bengal for ${d.getUTCFullYear()}. No official government holidays or major observances are listed for this date.</p>
+      </div>
+      <div class="modal-section">
+        <div class="ms-title"><i class="fas fa-briefcase"></i> Status</div>
+        <p class="ms-text">Schools, colleges, government offices, and businesses operate on their normal schedules. Regular banking and administrative hours apply.</p>
+      </div>
+    `;
+  }
+  
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBadge').textContent = badge;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  
+  modal.classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('dayModal').classList.remove('active');
+}
+
+document.getElementById('dayModal').addEventListener('click', (e) => {
+  if (e.target.id === 'dayModal') closeModal();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+/* ============ STATS ============ */
+function animateCount(el, target){
+  let cur = 0;
+  const step = Math.max(1, Math.ceil(target/30));
+  const tick = () => {
+    cur += step;
+    if(cur >= target){el.textContent = target;return}
+    el.textContent = cur;
+    requestAnimationFrame(tick);
+  };
+  tick();
+}
+
+function renderStats(){
+  const counts = {festival:0,religious:0,national:0,cultural:0,weekend:0};
+  holidays.forEach(h => counts[h.type]++);
+  animateCount(document.getElementById('statFestival'), counts.festival);
+  animateCount(document.getElementById('statReligious'), counts.religious);
+  animateCount(document.getElementById('statNational'), counts.national);
+  animateCount(document.getElementById('statCultural'), counts.cultural);
+  animateCount(document.getElementById('statWeekend'), counts.weekend);
+}
+
+/* ============ TOAST ============ */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+/* ============ INIT ============ */
+updateClocks();
+updateTodaySpotlight();
+renderMonths();
+renderStats();
+setInterval(updateClocks, 1000); // Checks for midnight rollover every second
+</script>
+</body>
+</html>
